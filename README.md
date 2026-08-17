@@ -1,0 +1,99 @@
+# 🦉 宝宝乐园 · 幼儿教育有声乐园
+
+专为幼儿（不识字的小朋友）设计的有声教育小应用。点一点，就会朗读出来。
+
+包含三大栏目：
+
+| 栏目 | 说明 | 演示 |
+| --- | --- | --- |
+| 📖 **知识百科** | 动物、自然的趣味小知识，点开自动朗读 | 大象为什么用鼻子喷水？ |
+| 🤔 **脑筋急转弯** | 先读题目，点「揭晓答案」再读答案 | 什么东西越洗越脏？ |
+| 📜 **唐诗** | 经典唐诗 + 白话译文，读古诗 / 听译文 | 静夜思、春晓、咏鹅…… |
+
+语音方案：浏览器内置语音（Web Speech API），**免费、无后端、无 API Key**，慢速朗读方便幼儿跟读。
+
+## 一键部署到 EdgeOne Pages
+
+[![Deploy with EdgeOne Makers](https://cdnstatic.tencentcs.com/edgeone/pages/deploy.svg)](https://edgeone.ai/pages/new?repository-url=https://github.com/your-name/kids-edu)
+
+> ⚠️ 点击前请先把上面链接里的 `your-name/kids-edu` 换成你自己的 GitHub 仓库地址。
+
+### 方式 A：从 GitHub 一键部署（推荐）
+
+1. 把本项目推到 GitHub：
+   ```bash
+   git init
+   git add .
+   git commit -m "init"
+   git remote add origin https://github.com/你的账号/kids-edu.git
+   git push -u origin main
+   ```
+2. 点击上方**部署按钮**（或打开腾讯云 EdgeOne 控制台 → **Pages** → **创建项目** → 导入 Git 仓库）。
+3. EdgeOne 自动识别 Vite 构建（构建命令 `npm run build`，输出目录 `dist`），点击「立即创建」即部署完成。
+4. 以后每次 `git push`，都会自动重新部署。
+
+### 方式 B：从 Gitee 部署（无需 GitHub）
+
+EdgeOne Pages 同样支持 Gitee：
+
+1. 把本项目推到 Gitee 仓库：
+   ```bash
+   git init
+   git add .
+   git commit -m "init"
+   git remote add origin https://gitee.com/你的账号/kids-edu.git
+   git push -u origin main
+   ```
+2. 打开腾讯云 EdgeOne 控制台 → **Pages** → **创建项目** → **导入 Git 仓库**。
+3. 点击 **Gitee**，完成账号授权（建议选择「授权所有仓库」）。
+4. 选择刚才的仓库，配置：
+   - 项目名称：如 `kids-edu`
+   - 加速区域：**全球可用区**
+   - 构建命令：`npm run build`，输出目录：`dist`
+5. 点击「开始部署」，约 1-3 分钟部署完成，会自动生成 `xxx.edgeone.app` 域名（含 HTTPS）。
+6. 以后每次 `git push` 到 main 分支，都会自动重新部署。
+
+### 方式 C：用 EdgeOne CLI 直接部署（无需代码仓库）
+
+```bash
+npm install -g edgeone
+edgeone pages init      # 登录腾讯云账号、选择项目
+edgeone pages deploy    # 构建并部署
+```
+
+### 部署小贴士
+
+- 公测期免费（含每月 10GB CDN 流量 + 边缘函数调用）。
+- 预览域名约 **3 小时**有效；长期使用请在项目设置中绑定自定义域名（需完成备案）。
+- 项目已设置相对路径资源（`base: './'`），部署到子路径也能正常加载。
+
+## 本地开发
+
+```bash
+npm install
+npm run dev        # 本地预览：http://localhost:5173
+npm run build      # 产物输出到 dist/
+npm run preview    # 本地预览生产包
+```
+
+> 语音依赖浏览器自带中文语音：电脑 Chrome/Edge 一般自带微软中文音色；手机系统浏览器/微信内置浏览器通常也支持。若听不到声音，先点首页「点我开始」解锁，并检查是否静音了（右上角喇叭图标）。
+
+## 如何扩充内容
+
+所有内容都在 `src/data/` 下，按同样的格式追加即可，无需改代码：
+
+- `encyclopedia.ts` → 知识百科：`{ id, category, emoji, title, text }`
+- `brainteasers.ts` → 脑筋急转弯：`{ id, emoji, question, answer }`
+- `tangshi.ts` → 唐诗：`{ id, title, author, dynasty, emoji, lines[], meaning }`
+
+例如在 `brainteasers.ts` 数组末尾加一条：
+
+```ts
+{ id: 'feather', emoji: '🪶', question: '什么东西越轻越好？', answer: '是羽毛，羽毛轻飘飘的。' }
+```
+
+## 技术栈
+
+- Vue 3（Composition API + `<script setup>`）+ TypeScript + Vite
+- vue-router（hash 模式，静态托管无需服务端配置）
+- 语音：Web Speech API（`speechSynthesis`）
