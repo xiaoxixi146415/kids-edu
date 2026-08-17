@@ -3,6 +3,8 @@ import { onUnmounted, ref } from 'vue'
 import { tangshi, type Tangshi } from '../data/tangshi'
 import { useSpeech } from '../composables/useSpeech'
 import BigCard from '../components/BigCard.vue'
+import DetailDialog from '../components/DetailDialog.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 const { speak, stop } = useSpeech()
 const selected = ref<Tangshi | null>(null)
@@ -46,28 +48,39 @@ onUnmounted(stop)
       />
     </div>
 
-    <Transition name="pop">
-      <div v-if="selected" class="detail-overlay" @click.self="close">
-        <div class="detail-card detail-tangshi">
-          <button class="close-btn" aria-label="关闭" @click="close">✕</button>
-          <div class="detail-emoji">{{ selected.emoji }}</div>
-          <h2 class="poem-title">{{ selected.title }}</h2>
-          <p class="poem-author">{{ selected.dynasty }} · {{ selected.author }}</p>
-          <p class="poem-lines">{{ poemText(selected) }}</p>
+    <DetailDialog
+      :open="!!selected"
+      :title="selected?.title ?? '唐诗'"
+      tone="detail-tangshi"
+      @close="close"
+    >
+      <div v-if="selected">
+        <div class="detail-emoji" aria-hidden="true">{{ selected.emoji }}</div>
+        <h2 class="poem-title">{{ selected.title }}</h2>
+        <p class="poem-author">{{ selected.dynasty }} · {{ selected.author }}</p>
+        <p class="poem-lines">{{ poemText(selected) }}</p>
 
-          <Transition name="flip">
-            <div v-if="showMeaning" class="meaning-box">
-              <p class="meaning-text">💡 {{ selected.meaning }}</p>
-            </div>
-          </Transition>
-
-          <div class="ts-actions">
-            <button class="btn btn-ghost" @click="speak(poemText(selected))">📜 读古诗</button>
-            <button class="btn btn-primary" @click="readMeaning">📖 听译文</button>
-            <button class="btn btn-ghost" @click="stop">⏹ 停止</button>
+        <Transition name="flip">
+          <div v-if="showMeaning" class="meaning-box" role="status">
+            <p class="meaning-text">{{ selected.meaning }}</p>
           </div>
+        </Transition>
+
+        <div class="ts-actions">
+          <button type="button" class="btn btn-ghost" @click="speak(poemText(selected))">
+            <AppIcon name="book" />
+            读古诗
+          </button>
+          <button type="button" class="btn btn-primary" @click="readMeaning">
+            <AppIcon name="feather" />
+            听译文
+          </button>
+          <button type="button" class="btn btn-ghost" @click="stop">
+            <AppIcon name="stop" />
+            停止
+          </button>
         </div>
       </div>
-    </Transition>
+    </DetailDialog>
   </div>
 </template>

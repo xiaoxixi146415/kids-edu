@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { encyclopedia, type EncyclopediaItem } from '../data/encyclopedia'
 import { useSpeech } from '../composables/useSpeech'
 import BigCard from '../components/BigCard.vue'
+import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 
 const { speak, stop } = useSpeech()
@@ -52,16 +53,18 @@ onUnmounted(stop)
       </div>
     </section>
 
-    <Transition name="pop">
-      <div v-if="selected" class="detail-overlay" @click.self="close">
-        <div class="detail-card detail-en">
-          <button class="close-btn" aria-label="关闭" @click="close">✕</button>
-          <div class="detail-emoji">{{ selected.emoji }}</div>
-          <h2 class="detail-title">{{ selected.title }}</h2>
-          <p class="detail-text">{{ selected.text }}</p>
-          <AudioPlayer :text="read(selected)" />
-        </div>
+    <DetailDialog
+      :open="!!selected"
+      :title="selected?.title ?? '知识百科'"
+      tone="detail-en"
+      @close="close"
+    >
+      <div v-if="selected">
+        <div class="detail-emoji" aria-hidden="true">{{ selected.emoji }}</div>
+        <h2 class="detail-title">{{ selected.title }}</h2>
+        <p class="detail-text">{{ selected.text }}</p>
+        <AudioPlayer :text="read(selected)" />
       </div>
-    </Transition>
+    </DetailDialog>
   </div>
 </template>

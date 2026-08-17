@@ -10,8 +10,8 @@ defineEmits<{ (e: 'click'): void }>()
 </script>
 
 <template>
-  <button class="big-card" :class="tone" @click="$emit('click')">
-    <span class="card-emoji">{{ emoji }}</span>
+  <button type="button" class="big-card" :class="tone" @click="$emit('click')">
+    <span class="card-emoji" aria-hidden="true">{{ emoji }}</span>
     <span class="card-title">{{ title }}</span>
     <span v-if="subtitle" class="card-subtitle">{{ subtitle }}</span>
   </button>

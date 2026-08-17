@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { useSpeech } from '../composables/useSpeech'
 import BigCard from '../components/BigCard.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 const router = useRouter()
 const { speak, unlock, unlocked, supported } = useSpeech()
@@ -19,9 +20,12 @@ function open(path: string, label: string) {
 
 <template>
   <div class="home">
-    <div class="mascot" :class="{ wiggle: unlocked }">🦉</div>
+    <div class="mascot" :class="{ wiggle: unlocked }" aria-hidden="true">🦉</div>
 
-    <button v-if="!unlocked" class="btn-start" @click="start">🔊 点我开始</button>
+    <button v-if="!unlocked" type="button" class="btn-start" @click="start">
+      <AppIcon name="sound-on" />
+      点我开始
+    </button>
     <p v-else class="welcome">小朋友，欢迎来到宝宝乐园！</p>
     <p v-if="supported && !unlocked" class="hint">👆 先点一下「开始」，让声音响起来吧</p>
 

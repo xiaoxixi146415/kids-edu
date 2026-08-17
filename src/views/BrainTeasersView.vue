@@ -3,7 +3,9 @@ import { onUnmounted, ref } from 'vue'
 import { brainteasers, type BrainTeaser } from '../data/brainteasers'
 import { useSpeech } from '../composables/useSpeech'
 import BigCard from '../components/BigCard.vue'
+import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 const { speak, stop } = useSpeech()
 const selected = ref<BrainTeaser | null>(null)
@@ -42,27 +44,30 @@ onUnmounted(stop)
       />
     </div>
 
-    <Transition name="pop">
-      <div v-if="selected" class="detail-overlay" @click.self="close">
-        <div class="detail-card detail-bt">
-          <button class="close-btn" aria-label="关闭" @click="close">✕</button>
-          <div class="detail-emoji">{{ selected.emoji }}</div>
-          <h2 class="detail-question">🤔 {{ selected.question }}</h2>
+    <DetailDialog
+      :open="!!selected"
+      :title="selected?.question ?? '脑筋急转弯'"
+      tone="detail-bt"
+      @close="close"
+    >
+      <div v-if="selected">
+        <div class="detail-emoji" aria-hidden="true">{{ selected.emoji }}</div>
+        <h2 class="detail-question">{{ selected.question }}</h2>
 
-          <Transition name="flip">
-            <div v-if="showAnswer" class="answer-box">
-              <p class="answer-text">💡 {{ selected.answer }}</p>
-            </div>
-          </Transition>
-
-          <div class="bt-actions">
-            <button v-if="!showAnswer" class="btn btn-primary" @click="reveal">
-              🌟 揭晓答案
-            </button>
-            <AudioPlayer v-else :text="`答案是：${selected.answer}`" />
+        <Transition name="flip">
+          <div v-if="showAnswer" class="answer-box" role="status">
+            <p class="answer-text">{{ selected.answer }}</p>
           </div>
+        </Transition>
+
+        <div class="bt-actions">
+          <button v-if="!showAnswer" type="button" class="btn btn-primary" @click="reveal">
+            <AppIcon name="bulb" />
+            揭晓答案
+          </button>
+          <AudioPlayer v-else :text="`答案是：${selected.answer}`" />
         </div>
       </div>
-    </Transition>
+    </DetailDialog>
   </div>
 </template>
