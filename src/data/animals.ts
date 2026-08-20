@@ -1,0 +1,178 @@
+export interface AnimalItem {
+  id: string
+  /** 分组：陆地 / 海洋 / 天空 / 极地 */
+  category: string
+  emoji: string
+  name: string
+  /** 叫声/特色声音拟声词 */
+  sound: string
+  /** 幼儿向一句话知识 */
+  fact: string
+}
+
+export const animals: AnimalItem[] = [
+  // ===== 陆地 =====
+  {
+    id: 'cat',
+    category: '陆地',
+    emoji: '🐱',
+    name: '猫',
+    sound: '喵喵',
+    fact: '猫的胡须能帮它探路，白天喜欢睡大觉，晚上出来抓老鼠。',
+  },
+  {
+    id: 'dog',
+    category: '陆地',
+    emoji: '🐶',
+    name: '狗',
+    sound: '汪汪',
+    fact: '狗是人类最好的朋友，耳朵很灵，能听见很远很远的声音。',
+  },
+  {
+    id: 'cow',
+    category: '陆地',
+    emoji: '🐮',
+    name: '牛',
+    sound: '哞',
+    fact: '牛爱吃青草，会帮农民伯伯耕地，还给我们好喝的牛奶。',
+  },
+  {
+    id: 'sheep',
+    category: '陆地',
+    emoji: '🐑',
+    name: '羊',
+    sound: '咩',
+    fact: '羊穿着软软的毛大衣，它那身毛可以纺成暖暖的毛线。',
+  },
+  {
+    id: 'horse',
+    category: '陆地',
+    emoji: '🐴',
+    name: '马',
+    sound: '咴咴',
+    fact: '马跑得飞快，哒哒哒，还能驮着人一起去旅行。',
+  },
+  {
+    id: 'lion',
+    category: '陆地',
+    emoji: '🦁',
+    name: '狮子',
+    sound: '嗷呜',
+    fact: '狮子是草原之王，头上的鬃毛一圈圈，像太阳一样漂亮。',
+  },
+  {
+    id: 'tiger',
+    category: '陆地',
+    emoji: '🐯',
+    name: '老虎',
+    sound: '吼',
+    fact: '老虎穿着条纹大衣，是森林里厉害的大王，吼起来声音可大了。',
+  },
+  {
+    id: 'elephant',
+    category: '陆地',
+    emoji: '🐘',
+    name: '大象',
+    sound: '呜',
+    fact: '大象的鼻子像一根水管，能吸水喷水，还能帮人们搬木头。',
+  },
+  // ===== 海洋 =====
+  {
+    id: 'dolphin',
+    category: '海洋',
+    emoji: '🐬',
+    name: '海豚',
+    sound: '吱吱',
+    fact: '海豚很聪明，会跳出海面表演，听说还会帮助落水的人呢。',
+  },
+  {
+    id: 'shark',
+    category: '海洋',
+    emoji: '🦈',
+    name: '鲨鱼',
+    sound: '哗啦哗啦',
+    fact: '鲨鱼是海里的游泳冠军，牙齿又尖又利，游得特别快。',
+  },
+  {
+    id: 'octopus',
+    category: '海洋',
+    emoji: '🐙',
+    name: '章鱼',
+    sound: '咕噜咕噜',
+    fact: '章鱼有八只软软的脚，遇到危险会喷出黑黑的墨汁逃跑。',
+  },
+  {
+    id: 'turtle',
+    category: '海洋',
+    emoji: '🐢',
+    name: '海龟',
+    sound: '扑通扑通',
+    fact: '海龟背着硬硬的壳，走起路来慢吞吞，却能活很久很久。',
+  },
+  // ===== 天空 =====
+  {
+    id: 'bird',
+    category: '天空',
+    emoji: '🐦',
+    name: '小鸟',
+    sound: '叽叽喳喳',
+    fact: '小鸟有翅膀会飞，在树枝上唱着歌，还会捉小虫子吃。',
+  },
+  {
+    id: 'eagle',
+    category: '天空',
+    emoji: '🦅',
+    name: '老鹰',
+    sound: '啾啾',
+    fact: '老鹰飞得又高又远，眼睛特别尖，能看见很远很远的小动物。',
+  },
+  {
+    id: 'butterfly',
+    category: '天空',
+    emoji: '🦋',
+    name: '蝴蝶',
+    sound: '扑扑',
+    fact: '蝴蝶小时候是毛毛虫，长大后展开漂亮的翅膀，飞来飞去真好看。',
+  },
+  {
+    id: 'bee',
+    category: '天空',
+    emoji: '🐝',
+    name: '蜜蜂',
+    sound: '嗡嗡嗡',
+    fact: '蜜蜂嗡嗡嗡地采花蜜，还会酿甜甜的蜂蜜给大家吃。',
+  },
+  // ===== 极地 =====
+  {
+    id: 'penguin',
+    category: '极地',
+    emoji: '🐧',
+    name: '企鹅',
+    sound: '嘎嘎',
+    fact: '企鹅住在很冷很冷的南极，走路摇摇摆摆，跳进水里游得飞快。',
+  },
+  {
+    id: 'polar-bear',
+    category: '极地',
+    emoji: '🐻‍❄️',
+    name: '北极熊',
+    sound: '嗷呜',
+    fact: '北极熊穿着白白的皮大衣，是北极冰海里的游泳健将。',
+  },
+  {
+    id: 'seal',
+    category: '极地',
+    emoji: '🦭',
+    name: '海豹',
+    sound: '嗯嗯',
+    fact: '海豹圆滚滚的，喜欢趴在冰上晒太阳，下水抓小鱼吃。',
+  },
+  {
+    id: 'snowy-owl',
+    category: '极地',
+    emoji: '🦉',
+    name: '雪鸮',
+    sound: '咕咕',
+    fact: '雪鸮是白色的猫头鹰，白天睡觉，晚上出来抓小老鼠。',
+  },
+]

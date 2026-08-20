@@ -24,6 +24,10 @@
   --tone-orange: linear-gradient(135deg, #ea580c, #c2410c);
   --tone-purple: linear-gradient(135deg, #a855f7, #7e22ce);
   --tone-green: linear-gradient(135deg, #16a34a, #15803d);
+  --tone-blue: linear-gradient(135deg, #0284c7, #0369a1);
+  --tone-red: linear-gradient(135deg, #dc2626, #b91c1c);
+  --tone-teal: linear-gradient(135deg, #0d9488, #0f766e);
+  --tone-amber: linear-gradient(135deg, #d97706, #b45309);
   --tone-start: linear-gradient(135deg, #ea580c, #c2410c);
 
   /* —— 字体 —— */
@@ -276,9 +280,9 @@ button {
 }
 
 .category-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
   margin-top: 18px;
 }
 
@@ -339,6 +343,22 @@ button {
 
 .tone-green {
   background: var(--tone-green);
+}
+
+.tone-blue {
+  background: var(--tone-blue);
+}
+
+.tone-red {
+  background: var(--tone-red);
+}
+
+.tone-teal {
+  background: var(--tone-teal);
+}
+
+.tone-amber {
+  background: var(--tone-amber);
 }
 
 /* ===== 列表页分组 ===== */
@@ -499,6 +519,251 @@ button {
   flex-wrap: wrap;
 }
 
+/* 识字认字详情 */
+.detail-hanzi {
+  background: linear-gradient(160deg, #e0f2fe, #bae6fd);
+}
+
+.hanzi-big {
+  font-size: 112px;
+  line-height: 1.15;
+  margin-top: var(--space-2);
+  font-weight: 800;
+  color: var(--color-ink);
+  text-shadow: 0 3px 0 rgba(255, 255, 255, 0.7);
+}
+
+.hanzi-pinyin {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0369a1;
+  margin-top: var(--space-1);
+}
+
+.hanzi-words {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: 14px;
+}
+
+.word-chip {
+  padding: 6px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font-size: 19px;
+  font-weight: 700;
+  color: #0369a1;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 数学启蒙：数字详情 */
+.detail-math {
+  background: linear-gradient(160deg, #ffe4e6, #fecdd3);
+}
+
+.num-big {
+  font-size: 104px;
+  line-height: 1.15;
+  margin-top: var(--space-2);
+  font-weight: 800;
+  color: var(--color-ink);
+  text-shadow: 0 3px 0 rgba(255, 255, 255, 0.7);
+}
+
+.num-cn {
+  font-size: 26px;
+  font-weight: 700;
+  color: #be123c;
+  margin-top: var(--space-1);
+}
+
+.num-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.num-dots span {
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+/* 数学启蒙：趣味练习面板 */
+.quiz-panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.quiz-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.quiz-dots span {
+  font-size: 34px;
+  line-height: 1.2;
+}
+
+.quiz-math {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--color-ink);
+}
+
+.quiz-feedback {
+  min-height: 1.6em;
+  margin-top: 12px;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.quiz-options {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.quiz-opt {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border-soft);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-size: 30px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-fast) ease;
+}
+
+.quiz-opt:not(:disabled):active {
+  transform: scale(0.92);
+}
+
+.quiz-opt.correct {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+.quiz-opt.wrong {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+  animation: shake 0.4s ease;
+}
+
+.quiz-opt.dimmed {
+  opacity: 0.35;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+.quiz-actions {
+  margin-top: 20px;
+}
+
+/* 动物乐园详情 */
+.detail-animal {
+  background: linear-gradient(160deg, #ccfbf1, #99f6e4);
+}
+
+.animal-sound {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 22px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font-size: var(--text-title);
+  font-weight: 800;
+  color: #0f766e;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 绘本故事详情 */
+.detail-story {
+  background: linear-gradient(160deg, #fef3c7, #fde68a);
+}
+
+.story-view {
+  padding-top: 4px;
+}
+
+.story-emoji {
+  font-size: 96px;
+  line-height: 1.1;
+}
+
+.story-text {
+  font-size: 24px;
+  line-height: 1.8;
+  margin-top: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.story-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.story-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(180, 83, 9, 0.3);
+  transition: width var(--duration-mid) ease;
+}
+
+.story-dot.active {
+  width: 22px;
+  background: #b45309;
+}
+
+.story-page-num {
+  font-size: 17px;
+  font-weight: 700;
+  color: #92400e;
+  margin-top: 8px;
+}
+
+.story-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: 20px;
+}
+
 /* ===== 按钮与朗读条 ===== */
 .btn {
   display: inline-flex;
@@ -524,6 +789,15 @@ button {
 
 .btn-primary {
   background: var(--tone-start);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn:disabled:active {
+  transform: none;
 }
 
 .btn-ghost {
@@ -567,6 +841,10 @@ button {
   .mascot,
   .mascot.wiggle,
   .btn-start {
+    animation: none;
+  }
+
+  .quiz-opt.wrong {
     animation: none;
   }
 

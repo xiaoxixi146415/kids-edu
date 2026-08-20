@@ -54,6 +54,38 @@ function open(path: string, label: string) {
         tone="tone-green"
         @click="open('/tangshi', '唐诗，跟着念古诗')"
       />
+      <BigCard
+        class="card-xl"
+        emoji="✏️"
+        title="识字认字"
+        subtitle="认一认汉字"
+        tone="tone-blue"
+        @click="open('/hanzi', '识字认字，认一认汉字')"
+      />
+      <BigCard
+        class="card-xl"
+        emoji="🔢"
+        title="数学启蒙"
+        subtitle="数一数算一算"
+        tone="tone-red"
+        @click="open('/math', '数学启蒙，数一数算一算')"
+      />
+      <BigCard
+        class="card-xl"
+        emoji="🦁"
+        title="动物乐园"
+        subtitle="听听动物朋友"
+        tone="tone-teal"
+        @click="open('/animals', '动物乐园，听听动物朋友')"
+      />
+      <BigCard
+        class="card-xl"
+        emoji="📚"
+        title="绘本故事"
+        subtitle="翻翻听故事"
+        tone="tone-amber"
+        @click="open('/stories', '绘本故事，翻翻听故事')"
+      />
     </div>
   </div>
 </template>

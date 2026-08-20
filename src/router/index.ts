@@ -24,6 +24,30 @@ const router = createRouter({
       component: () => import('../views/TangshiView.vue'),
       meta: { title: '唐诗' },
     },
+    {
+      path: '/hanzi',
+      name: 'hanzi',
+      component: () => import('../views/HanziView.vue'),
+      meta: { title: '识字认字' },
+    },
+    {
+      path: '/math',
+      name: 'math',
+      component: () => import('../views/MathView.vue'),
+      meta: { title: '数学启蒙' },
+    },
+    {
+      path: '/animals',
+      name: 'animals',
+      component: () => import('../views/AnimalsView.vue'),
+      meta: { title: '动物乐园' },
+    },
+    {
+      path: '/stories',
+      name: 'stories',
+      component: () => import('../views/StoriesView.vue'),
+      meta: { title: '绘本故事' },
+    },
   ],
 })
 

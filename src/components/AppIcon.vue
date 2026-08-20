@@ -25,6 +25,11 @@ withDefaults(defineProps<{ name: string; size?: number }>(), { size: 24 })
       <path d="M15 4l-8 8 8 8" />
       <path d="M7 12h13" />
     </template>
+    <!-- 下一页 -->
+    <template v-else-if="name === 'next'">
+      <path d="M9 5l8 8-8 8" />
+      <path d="M17 12H4" />
+    </template>
     <!-- 关闭 -->
     <template v-else-if="name === 'close'">
       <path d="M6 6l12 12M18 6L6 18" />
