@@ -31,6 +31,7 @@
 - [x] 拼音模块 `/pinyin`：63 项（声母 23 / 韵母 24 / 整体认读 16），大音节+例词+讲解+朗读，新 `--tone-pink`（#e11d48→#be123c）、`detail-pinyin`、`.pinyin-big/.pinyin-example`；首页第 8 张卡「🔤 拼音乐园」。
 - [x] 可用性验证（headless Chrome + CDP）：首页 8 卡渲染；拼音路由懒加载 63 卡 + 详情弹层；语音面板打开（7 个中文音色）→ 选语速 → localStorage 持久化 → Esc 关闭；SW 实际注册成功；控制台零错误。
 - [x] 构建（68 modules）+ preview 全资源 200（manifest/sw.js/registerSW/5 图标）。
+- [x] 提交推送 Gitee（`ec1b802`），触发 EdgeOne 自动部署。
 
 ## 测试结果
 - `npm run build`（vue-tsc -b && vite build）：通过，68 modules；PWA precache 27 条目。
