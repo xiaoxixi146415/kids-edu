@@ -86,6 +86,14 @@ function open(path: string, label: string) {
         tone="tone-amber"
         @click="open('/stories', '绘本故事，翻翻听故事')"
       />
+      <BigCard
+        class="card-xl"
+        emoji="🔤"
+        title="拼音乐园"
+        subtitle="认声母学韵母"
+        tone="tone-pink"
+        @click="open('/pinyin', '拼音乐园，认声母学韵母')"
+      />
     </div>
   </div>
 </template>

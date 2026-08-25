@@ -23,11 +23,21 @@
 - [x] 首页入口 3 → 7 张卡；`category-list` 改 `auto-fill minmax(160px, 1fr)` 自适应网格。
 - [x] 构建验证（63 modules）+ preview（4 新 chunk 均 200）+ 新色对比度复核（teal 3.75 / amber 3.18，白字大字号均 ≥3:1）。
 
+## 会话 4（2026-08-25）— 技术/体验优化 + 拼音模块
+- [x] PWA 离线可玩：`vite-plugin-pwa` 1.3.0（autoUpdate + manifest + navigateFallback），`scripts/gen-icons.mjs` 用 sharp 从 favicon.svg 栅格化 5 枚 PNG 图标（192/512 + maskable×2 + apple-touch）。
+- [x] 语音设置：`useSpeech` 重构（`settings={voiceURI,rate}` 持久化 `kids-edu-speech`；新 `setVoice/setRate/settings/zhVoices`）；`SpeechSettings.vue` 复用 DetailDialog（音色单选 + 语速三档 🐢0.7/😊0.85/🐇1.0）；AppIcon 新增 `settings` 齿轮；App.vue 顶栏新增设置入口。
+- [x] 页面动效：`RouterView` 包 `<Transition name="page" mode="out-in">`（淡入+上移 8px），reduced-motion 兜底。
+- [x] 性能优化：`manualChunks` 拆 vendor（vue+vue-router 39KB gzip，长缓存）；视图保持懒加载。
+- [x] 拼音模块 `/pinyin`：63 项（声母 23 / 韵母 24 / 整体认读 16），大音节+例词+讲解+朗读，新 `--tone-pink`（#e11d48→#be123c）、`detail-pinyin`、`.pinyin-big/.pinyin-example`；首页第 8 张卡「🔤 拼音乐园」。
+- [x] 可用性验证（headless Chrome + CDP）：首页 8 卡渲染；拼音路由懒加载 63 卡 + 详情弹层；语音面板打开（7 个中文音色）→ 选语速 → localStorage 持久化 → Esc 关闭；SW 实际注册成功；控制台零错误。
+- [x] 构建（68 modules）+ preview 全资源 200（manifest/sw.js/registerSW/5 图标）。
+
 ## 测试结果
-- `npm run build`（vue-tsc -b && vite build）：3 次全过，50 modules，产物 ~43KB gzip。
-- `npm run preview`（4318 端口）：首页 200，相对路径资源加载正常，viewport 已放开缩放。
+- `npm run build`（vue-tsc -b && vite build）：通过，68 modules；PWA precache 27 条目。
+- 首屏 gzip ≈ 49KB（vendor 39 + index 6.1 + css 3.5）；拼音 chunk 独立懒加载（3.1KB gzip）。
+- headless Chrome CDP 实测：SW 注册 `swRegistered:true`、manifest/apple-icon link 就位、控制台 0 错误、弹层 Esc 关闭。
+- 语音设置持久化实测：`localStorage['kids-edu-speech']` = `{"voiceURI":null,"rate":1}`（点「稍快」后）。
 - 源码 grep：`*.vue` 内 0 处硬编码 hex（令牌化完整）。
-- 产物 CSS grep：`ea580c / a855f7 / 16a34a / prefers-reduced-motion / focus-visible / overscroll-behavior / touch-action` 全部命中。
 
 ## web-design-guidelines 审查结果（Vercel 最新规范，2026-08-17 拉取）
 审查文件：index.html、src/App.vue、src/assets/main.css、src/components/{AppIcon,BigCard,SoundToggle,AudioPlayer,DetailDialog}.vue、src/views/{Home,Encyclopedia,BrainTeasers,Tangshi}View.vue

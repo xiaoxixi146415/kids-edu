@@ -28,6 +28,7 @@
   --tone-red: linear-gradient(135deg, #dc2626, #b91c1c);
   --tone-teal: linear-gradient(135deg, #0d9488, #0f766e);
   --tone-amber: linear-gradient(135deg, #d97706, #b45309);
+  --tone-pink: linear-gradient(135deg, #e11d48, #be123c);
   --tone-start: linear-gradient(135deg, #ea580c, #c2410c);
 
   /* —— 字体 —— */
@@ -197,6 +198,13 @@ button {
   opacity: 0.7;
 }
 
+.top-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .page-body {
   max-width: 720px;
   margin: 0 auto;
@@ -359,6 +367,10 @@ button {
 
 .tone-amber {
   background: var(--tone-amber);
+}
+
+.tone-pink {
+  background: var(--tone-pink);
 }
 
 /* ===== 列表页分组 ===== */
@@ -712,6 +724,27 @@ button {
   background: linear-gradient(160deg, #fef3c7, #fde68a);
 }
 
+/* 拼音乐园详情 */
+.detail-pinyin {
+  background: linear-gradient(160deg, #ffe4e6, #fecdd3);
+}
+
+.pinyin-big {
+  color: #be123c;
+}
+
+.pinyin-example {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 20px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font-size: var(--text-title);
+  font-weight: 800;
+  color: #be123c;
+  box-shadow: var(--shadow-sm);
+}
+
 .story-view {
   padding-top: 4px;
 }
@@ -762,6 +795,93 @@ button {
   justify-content: center;
   gap: var(--space-3);
   margin-top: 20px;
+}
+
+/* ===== 语音设置弹层 ===== */
+.detail-settings {
+  background: linear-gradient(160deg, #fef9c3, #fef08a);
+}
+
+.settings-title {
+  font-size: var(--text-title);
+  margin-bottom: var(--space-4);
+}
+
+.settings-field {
+  border: none;
+  margin: 0 0 var(--space-5);
+  text-align: left;
+}
+
+.settings-label {
+  display: block;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-3);
+  padding: 0;
+}
+
+.settings-voice-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.voice-chip {
+  border: 2px solid var(--color-border-soft);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-size: var(--text-label);
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  transition: transform var(--duration-fast) ease;
+}
+
+.voice-chip.active {
+  background: var(--tone-start);
+  border-color: transparent;
+  color: var(--color-on-primary);
+}
+
+.voice-chip:active {
+  transform: scale(0.94);
+}
+
+.settings-rate {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.rate-btn {
+  border: 2px solid var(--color-border-soft);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-size: var(--text-body);
+  font-weight: 700;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-pill);
+  transition: transform var(--duration-fast) ease;
+}
+
+.rate-btn.active {
+  background: var(--tone-start);
+  border-color: transparent;
+  color: var(--color-on-primary);
+}
+
+.rate-btn:active {
+  transform: scale(0.94);
+}
+
+.settings-hint {
+  text-align: center;
+  margin-top: var(--space-2);
+  font-size: 17px;
+  color: var(--color-text-secondary);
 }
 
 /* ===== 按钮与朗读条 ===== */
@@ -836,6 +956,20 @@ button {
   transform: rotateX(90deg);
 }
 
+/* 路由切换过渡：淡入 + 上移 */
+.page-enter-active,
+.page-leave-active {
+  transition:
+    opacity var(--duration-mid) ease,
+    transform var(--duration-mid) ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
 /* ===== 减少动效（prefers-reduced-motion） ===== */
 @media (prefers-reduced-motion: reduce) {
   .mascot,
@@ -852,5 +986,16 @@ button {
   .pop-leave-active,
   .flip-enter-active {
     transition: none;
+  }
+
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+
+  .page-enter-from,
+  .page-leave-to {
+    opacity: 1;
+    transform: none;
   }
 }

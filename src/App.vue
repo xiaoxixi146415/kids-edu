@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SoundToggle from './components/SoundToggle.vue'
+import SpeechSettings from './components/SpeechSettings.vue'
 import AppIcon from './components/AppIcon.vue'
 
 const route = useRoute()
@@ -9,6 +10,7 @@ const router = useRouter()
 
 const isHome = computed(() => route.path === '/')
 const pageTitle = computed(() => (route.meta.title as string) ?? '宝宝乐园')
+const settingsOpen = ref(false)
 
 function goHome() {
   router.push('/')
@@ -31,10 +33,28 @@ function skipToMain() {
       </button>
       <span v-else class="back-btn" aria-hidden="true"></span>
       <h1 class="app-title">{{ pageTitle }}</h1>
-      <SoundToggle />
+      <div class="top-actions">
+        <SoundToggle />
+        <button
+          type="button"
+          class="sound-toggle"
+          aria-label="语音设置"
+          :aria-haspopup="true"
+          :aria-expanded="settingsOpen"
+          @click="settingsOpen = true"
+        >
+          <AppIcon name="settings" />
+        </button>
+      </div>
     </header>
     <main id="main" class="page-body" tabindex="-1">
-      <router-view />
+      <RouterView v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </main>
+
+    <SpeechSettings :open="settingsOpen" @close="settingsOpen = false" />
   </div>
 </template>

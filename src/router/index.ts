@@ -48,6 +48,12 @@ const router = createRouter({
       component: () => import('../views/StoriesView.vue'),
       meta: { title: '绘本故事' },
     },
+    {
+      path: '/pinyin',
+      name: 'pinyin',
+      component: () => import('../views/PinyinView.vue'),
+      meta: { title: '拼音乐园' },
+    },
   ],
 })
 

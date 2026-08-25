@@ -2,15 +2,22 @@
 
 专为幼儿（不识字的小朋友）设计的有声教育小应用。点一点，就会朗读出来。
 
-包含三大栏目：
+包含八大栏目：
 
 | 栏目 | 说明 | 演示 |
 | --- | --- | --- |
 | 📖 **知识百科** | 动物、自然的趣味小知识，点开自动朗读 | 大象为什么用鼻子喷水？ |
 | 🤔 **脑筋急转弯** | 先读题目，点「揭晓答案」再读答案 | 什么东西越洗越脏？ |
 | 📜 **唐诗** | 经典唐诗 + 白话译文，读古诗 / 听译文 | 静夜思、春晓、咏鹅…… |
+| ✏️ **识字认字** | 大字形 + 拼音 + 组词，认一认汉字 | 一、日、山、水…… |
+| 🔢 **数学启蒙** | 数字认知 + 数一数/加减法趣味练习 | 0-9 数字、3 选 1 练习 |
+| 🦁 **动物乐园** | 认识动物，听叫声和讲解 | 大象、老虎、海豚…… |
+| 📚 **绘本故事** | 逐页翻读的有声小故事 | 3 篇 4-5 页小故事 |
+| 🔤 **拼音乐园** | 声母、韵母、整体认读，认音学词 | b、a、zh、yi…… |
 
 语音方案：浏览器内置语音（Web Speech API），**免费、无后端、无 API Key**，慢速朗读方便幼儿跟读。
+
+**PWA**：支持安装到主屏、完全离线可玩，可设置音色与语速（顶栏 ⚙️ 齿轮）。
 
 ## 一键部署到 EdgeOne Pages
 
@@ -74,6 +81,7 @@ npm install
 npm run dev        # 本地预览：http://localhost:5173
 npm run build      # 产物输出到 dist/
 npm run preview    # 本地预览生产包
+npm run gen-icons  # 重新生成 PWA 图标（改过 favicon.svg 后运行）
 ```
 
 > 语音依赖浏览器自带中文语音：电脑 Chrome/Edge 一般自带微软中文音色；手机系统浏览器/微信内置浏览器通常也支持。若听不到声音，先点首页「点我开始」解锁，并检查是否静音了（右上角喇叭图标）。
@@ -85,6 +93,11 @@ npm run preview    # 本地预览生产包
 - `encyclopedia.ts` → 知识百科：`{ id, category, emoji, title, text }`
 - `brainteasers.ts` → 脑筋急转弯：`{ id, emoji, question, answer }`
 - `tangshi.ts` → 唐诗：`{ id, title, author, dynasty, emoji, lines[], meaning }`
+- `hanzi.ts` → 识字认字：`{ id, category, emoji, hanzi, pinyin, words[], text }`
+- `math.ts` → 数学启蒙：`{ id, emoji, number, cn, count }`
+- `animals.ts` → 动物乐园：`{ id, group, emoji, name, sound, text }`
+- `stories.ts` → 绘本故事：`{ id, emoji, title, pages[] }`
+- `pinyin.ts` → 拼音乐园：`{ id, group, pinyin, example, emoji, text }`
 
 例如在 `brainteasers.ts` 数组末尾加一条：
 
