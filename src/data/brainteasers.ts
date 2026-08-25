@@ -102,4 +102,28 @@ export const brainteasers: BrainTeaser[] = [
     question: '什么球最大，却没有人敢踢？',
     answer: '是地球。地球这么大，我们可不能踢它。',
   },
+  {
+    id: 'wave',
+    emoji: '🌊',
+    question: '什么花开在大海里，白白的，拍在石头上哗啦啦响？',
+    answer: '是浪花。浪花是大海里的花，一撞上石头就碎成了小水珠。',
+  },
+  {
+    id: 'soap',
+    emoji: '🧼',
+    question: '什么东西越洗越小，洗着洗着就不见了？',
+    answer: '是肥皂。肥皂越用越小，最后用完就不见了。',
+  },
+  {
+    id: 'balloon',
+    emoji: '🎈',
+    question: '什么东西圆鼓鼓的，没有翅膀，却能飞上天？',
+    answer: '是气球。气球肚子里装满气，轻飘飘地就飞起来了。',
+  },
+  {
+    id: 'lamp',
+    emoji: '💡',
+    question: '什么东西白天睡觉，晚上睁大眼睛，把黑夜照亮？',
+    answer: '是电灯。晚上一开灯，房间就亮堂堂的。',
+  },
 ]

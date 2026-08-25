@@ -33,8 +33,17 @@
 - [x] 构建（68 modules）+ preview 全资源 200（manifest/sw.js/registerSW/5 图标）。
 - [x] 提交推送 Gitee（`ec1b802`），触发 EdgeOne 自动部署。
 
+## 会话 5（2026-08-25）— 内容扩充
+- [x] 知识百科：20 → **24 条**（兔子/青蛙/云/雨伞；动物+2、自然+1、生活常识+1）。
+- [x] 脑筋急转弯：16 → **20 条**（浪花/肥皂/气球/电灯）。
+- [x] 识字认字：20 → **24 字**（火/鱼/中/下；自然+1、动物+1、常用字+2）。
+- [x] 动物乐园：20 → **24 只**（兔子/猴子/螃蟹/鹦鹉；陆地+2、海洋+1、天空+1）。
+- [x] 绘本故事：3 → **4 篇**（新增《龟兔赛跑》5 页，寓意「不能骄傲」）。
+- [x] 新增 17 个 id 已在 `src/data/` 全目录 grep 复核、全部全局唯一。
+
 ## 测试结果
 - `npm run build`（vue-tsc -b && vite build）：通过，68 modules；PWA precache 27 条目。
+- 会话 5 内容扩充实测：首页 8 卡冒烟 ✓；百科「兔子」、脑筋急转弯「拍在石头上」、识字「火」、动物「鹦鹉」、绘本「龟兔赛跑」5 页抽查全 ✓；SW 已注册、控制台零错误。
 - 首屏 gzip ≈ 49KB（vendor 39 + index 6.1 + css 3.5）；拼音 chunk 独立懒加载（3.1KB gzip）。
 - headless Chrome CDP 实测：SW 注册 `swRegistered:true`、manifest/apple-icon link 就位、控制台 0 错误、弹层 Esc 关闭。
 - 语音设置持久化实测：`localStorage['kids-edu-speech']` = `{"voiceURI":null,"rate":1}`（点「稍快」后）。

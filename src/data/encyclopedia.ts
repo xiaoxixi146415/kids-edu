@@ -148,4 +148,32 @@ export const encyclopedia: EncyclopediaItem[] = [
     title: '红绿灯',
     text: '马路边的红绿灯在指挥汽车和行人。红灯停，绿灯行，黄灯亮了等一等，过马路要看好它。',
   },
+  {
+    id: 'rabbit',
+    category: '动物',
+    emoji: '🐰',
+    title: '兔子',
+    text: '兔子有两只长长的耳朵，爱吃胡萝卜，跳起来一蹦一蹦的，遇到危险还会飞快地躲进地洞里。',
+  },
+  {
+    id: 'frog',
+    category: '动物',
+    emoji: '🐸',
+    title: '青蛙',
+    text: '青蛙小时候是小蝌蚪，长大了穿上绿衣裳，蹦蹦跳跳，专吃害虫，是庄稼的好朋友。',
+  },
+  {
+    id: 'cloud',
+    category: '自然',
+    emoji: '☁️',
+    title: '云',
+    text: '云软软的、白白的，飘在天上，会变成各种好玩的形状，像小羊，也像大团棉花糖。',
+  },
+  {
+    id: 'umbrella',
+    category: '生活常识',
+    emoji: '☂️',
+    title: '雨伞',
+    text: '下雨天，我们撑开雨伞，雨点打在伞面上，噼里啪啦地响，身上一点也不会淋湿。',
+  },
 ]

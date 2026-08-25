@@ -76,6 +76,22 @@ export const animals: AnimalItem[] = [
     sound: '呜',
     fact: '大象的鼻子像一根水管，能吸水喷水，还能帮人们搬木头。',
   },
+  {
+    id: 'bunny',
+    category: '陆地',
+    emoji: '🐰',
+    name: '兔子',
+    sound: '嗒嗒',
+    fact: '兔子有两只长长的耳朵，爱吃胡萝卜，跳起来一蹦一蹦的。',
+  },
+  {
+    id: 'monkey',
+    category: '陆地',
+    emoji: '🐵',
+    name: '猴子',
+    sound: '唧唧',
+    fact: '猴子爱爬树，喜欢吃香蕉，还会用尾巴把自己挂在树枝上荡秋千。',
+  },
   // ===== 海洋 =====
   {
     id: 'dolphin',
@@ -109,6 +125,14 @@ export const animals: AnimalItem[] = [
     sound: '扑通扑通',
     fact: '海龟背着硬硬的壳，走起路来慢吞吞，却能活很久很久。',
   },
+  {
+    id: 'crab',
+    category: '海洋',
+    emoji: '🦀',
+    name: '螃蟹',
+    sound: '咔嚓咔嚓',
+    fact: '螃蟹横着走路，有八只脚和两只大大的钳子，像穿了一身铠甲。',
+  },
   // ===== 天空 =====
   {
     id: 'bird',
@@ -141,6 +165,14 @@ export const animals: AnimalItem[] = [
     name: '蜜蜂',
     sound: '嗡嗡嗡',
     fact: '蜜蜂嗡嗡嗡地采花蜜，还会酿甜甜的蜂蜜给大家吃。',
+  },
+  {
+    id: 'parrot',
+    category: '天空',
+    emoji: '🦜',
+    name: '鹦鹉',
+    sound: '你好你好',
+    fact: '鹦鹉会学人说话，你教它说「你好」，它也会跟着说「你好」。',
   },
   // ===== 极地 =====
   {
