@@ -19,6 +19,31 @@
 
 **PWA**：支持安装到主屏、完全离线可玩，可设置音色与语速（顶栏 ⚙️ 齿轮）。
 
+## 部署到 GitHub Pages（当前方案）
+
+免费、永久、**免备案免实名**，推送即自动重新部署；手机「添加到主屏幕」装成 PWA 后可完全离线使用。
+
+**访问地址**：`https://xiaoxixi146415.github.io/kids-edu/`
+
+### 日常更新
+
+工作分支是 `master`，部署分支是 `main`：
+
+```bash
+git push origin master          # 推 Gitee 留档
+git push github master:main     # 推 GitHub → 自动部署
+```
+
+推送后 GitHub Actions（`.github/workflows/deploy.yml`）自动执行 `npm ci && npm run build` 并部署到 Pages，无需手动操作；已安装 PWA 的用户下次打开自动更新。
+
+### 首次搭建（新仓库时）
+
+1. 建公开仓库并加远程：`gh repo create kids-edu --public --source=. --remote github`
+2. 仓库 **Settings → Pages** → Source 选 **GitHub Actions**
+3. 推送：`git push github master:main`
+
+> ⚠️ 不要用 `git push github main`——本地 `main` 分支停在旧版本会推错，务必写 `master:main`。
+
 ## 一键部署到 EdgeOne Pages
 
 [![Deploy with EdgeOne Makers](https://cdnstatic.tencentcs.com/edgeone/pages/deploy.svg)](https://edgeone.ai/pages/new?repository-url=https://github.com/your-name/kids-edu)
