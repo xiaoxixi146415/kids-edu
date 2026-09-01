@@ -126,4 +126,28 @@ export const brainteasers: BrainTeaser[] = [
     question: '什么东西白天睡觉，晚上睁大眼睛，把黑夜照亮？',
     answer: '是电灯。晚上一开灯，房间就亮堂堂的。',
   },
+  {
+    id: 'pencil',
+    emoji: '✏️',
+    question: '什么东西越削越短，写秃了还要再削？',
+    answer: '是铅笔。铅笔越削越短，削到最后就剩一点点小笔头了。',
+  },
+  {
+    id: 'key',
+    emoji: '🔑',
+    question: '什么东西打开了门，自己却进不去？',
+    answer: '是钥匙。钥匙帮我们把门打开，它自己不会走进房间。',
+  },
+  {
+    id: 'bell',
+    emoji: '🔔',
+    question: '什么东西不用嘴巴说话，声音却很大？',
+    answer: '是铃铛。摇一摇铃铛，它就叮叮当当地响起来。',
+  },
+  {
+    id: 'kite',
+    emoji: '🪁',
+    question: '什么东西没有翅膀，却能在天上飞，还要靠风帮忙？',
+    answer: '是风筝。风一吹，风筝就摇摇摆摆地飞上天了。',
+  },
 ]

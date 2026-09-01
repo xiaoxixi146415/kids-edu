@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash(cd *)",
+      "Bash(grep *)",
       "Bash(git status *)",
       "Bash(git log *)",
       "Bash(git diff *)",

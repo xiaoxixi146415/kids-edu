@@ -5,8 +5,9 @@
  * - 自动挑选中文音色（优先 zh-CN，其次 zh 前缀）
  * - 可配置语速（settings.rate，默认 0.85 慢速，适合幼儿跟读）
  * - 可手动选择音色（settings.voiceURI，未选则自动挑选）
- * - 长文本按句子切分排队，避免单次 utterance 过长导致的静默/截断
+ * - 长文本按句子切分、逐句 onend 接力朗读，兼容 iOS 连续多句丢帧的问题
  * - 浏览器要求「用户手势」后才能发声：首页放一个「点我开始」按钮解锁
+ * - 移动端音色列表常需用户手势后才就绪：首次手势、轮询、visibilitychange 三重兜底
  * - 全局静音开关 + 音色/语速设置，均写入 localStorage 持久化
  */
 import { ref, readonly } from 'vue'
@@ -35,11 +36,17 @@ const settings = ref<SpeechSettings>({ ...DEFAULT_SETTINGS })
 /** 可用中文音色列表（随 voiceschanged 刷新） */
 const zhVoices = ref<SpeechSynthesisVoice[]>([])
 
+/** 音色列表是否已有结论（有返回值或已超时）：用于 UI 区分「加载中」与「设备无音色」 */
+const voicesChecked = ref(false)
+
 /** 语音是否已解锁：浏览器要求用户手势后才能发声 */
 const unlocked = ref(false)
 
 /** 当前自动挑选的中文音色（voiceURI 未手动指定时的兜底） */
 let autoZhVoice: SpeechSynthesisVoice | null = null
+
+/** 朗读接力用的序号：每次 speak/stop 自增，用于打断旧链（避免 cancel 触发 onend 又续读） */
+let speakSeq = 0
 
 function loadSettings() {
   if (typeof localStorage === 'undefined') return
@@ -72,14 +79,41 @@ function refreshVoices() {
     voices.find((v) => v.lang.toLowerCase() === 'zh-cn') ??
     voices.find((v) => v.lang.toLowerCase().startsWith('zh')) ??
     null
+  // 只要 getVoices 返回了任何音色，就说明列表已就绪（可能设备上根本没有中文音色）
+  if (voices.length > 0) voicesChecked.value = true
 }
 
 function init() {
   if (!supported) return
   loadSettings()
-  // Chrome 首次调用 getVoices() 可能为空，需等 voiceschanged 事件
   refreshVoices()
-  window.speechSynthesis.addEventListener('voiceschanged', refreshVoices)
+  const synth = window.speechSynthesis
+  // 部分旧浏览器只支持 onvoiceschanged 属性，两者都挂上
+  synth.addEventListener('voiceschanged', refreshVoices)
+  synth.onvoiceschanged = refreshVoices
+  // 兜底轮询：个别移动端 WebView 不触发 voiceschanged，列表延迟就绪；超时后标记为「已检查」
+  const startAt = Date.now()
+  const poll = window.setInterval(() => {
+    refreshVoices()
+    if (voicesChecked.value || Date.now() - startAt > 5000) {
+      window.clearInterval(poll)
+      if (!voicesChecked.value) voicesChecked.value = true // 5s 仍空 → 设备无可用音色
+    }
+  }, 250)
+  // 首次用户手势后音色才就绪（iOS/部分 Android）：手势时再刷一次
+  const prime = () => {
+    refreshVoices()
+    window.removeEventListener('pointerdown', prime)
+    window.removeEventListener('touchstart', prime)
+    window.removeEventListener('keydown', prime)
+  }
+  window.addEventListener('pointerdown', prime)
+  window.addEventListener('touchstart', prime)
+  window.addEventListener('keydown', prime)
+  // 从后台切回时 WebView 可能丢失音色列表，重新拉取
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshVoices()
+  })
 }
 
 /** 按中英文句号等切分成短句，保留标点 */
@@ -100,28 +134,45 @@ function resolveVoice(): SpeechSynthesisVoice | null {
   return autoZhVoice
 }
 
-/** 朗读一段文本：先取消上一段，再把句子依次入队 */
+/**
+ * 朗读一段文本：先取消上一段，再逐句 onend 接力。
+ * 不用一次性 queue 多句：iOS 常见「只播第一句就哑火」的 bug，
+ * 逐句等 onend 再播下一句最稳。
+ */
 function speak(text: string) {
   if (!supported || muted.value) return
-  const synth = window.speechSynthesis
   const chunks = splitSentences(text)
   if (chunks.length === 0) return
-
-  synth.cancel()
+  const synth = window.speechSynthesis
+  // 手势后音色可能刚就绪，先刷新再取
+  refreshVoices()
   const voice = resolveVoice()
-  for (const chunk of chunks) {
+  const seq = ++speakSeq
+  synth.cancel()
+  let i = 0
+  const play = () => {
+    if (seq !== speakSeq) return // 已被 stop/新一轮打断
+    const chunk = chunks[i]
+    if (chunk == null) return
+    i++
     const u = new SpeechSynthesisUtterance(chunk)
     u.lang = 'zh-CN'
     u.rate = settings.value.rate
     u.pitch = 1.05
     if (voice) u.voice = voice
+    u.onend = play
+    u.onerror = play // 出错也尝试播下一句，避免整段静默
     synth.speak(u)
+    // 老版 iOS 需要 resume() 才能开声，现代浏览器是空操作
+    synth.resume()
   }
+  play()
 }
 
 /** 停止当前朗读 */
 function stop() {
   if (!supported) return
+  speakSeq++ // 打断未播完的 onend 链
   window.speechSynthesis.cancel()
 }
 
@@ -138,6 +189,7 @@ function toggleMute(): boolean {
 /** 解锁语音（须由用户手势触发） */
 function unlock() {
   unlocked.value = true
+  refreshVoices()
 }
 
 /** 选择音色（传 voiceURI，null = 自动） */
@@ -165,6 +217,7 @@ export function useSpeech() {
     muted,
     unlocked,
     supported,
+    voicesChecked,
     settings: readonly(settings),
     zhVoices: readonly(zhVoices),
   }

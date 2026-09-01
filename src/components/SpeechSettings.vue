@@ -12,7 +12,7 @@ import DetailDialog from './DetailDialog.vue'
 withDefaults(defineProps<{ open: boolean }>(), { open: false })
 const emit = defineEmits<{ (e: 'close'): void }>()
 
-const { settings, zhVoices, setVoice, setRate } = useSpeech()
+const { settings, zhVoices, voicesChecked, supported, setVoice, setRate } = useSpeech()
 
 /** 可用中文音色：短名（去 lang 后缀），便于幼儿家长识别 */
 const voiceOptions = computed(() =>
@@ -21,6 +21,14 @@ const voiceOptions = computed(() =>
     name: v.name.replace(/\s*(zh-CN|zh-[A-Za-z]+)$/i, ''),
   }))
 )
+
+/** 无音色时的提示文案：区分「不支持 / 加载中 / 设备没装中文音色」 */
+const voiceHint = computed(() => {
+  if (!supported) return '当前浏览器不支持语音朗读，换用系统浏览器（如 Safari、Chrome）打开试试'
+  if (!voicesChecked.value) return '正在加载可用音色…'
+  if (!zhVoices.value.length) return '未检测到可用中文音色，请在手机系统设置里安装/启用中文语音包后重试'
+  return ''
+})
 
 const RATES = [
   { value: 0.7, label: '🐢 慢一点' },
@@ -64,7 +72,7 @@ function close() {
           {{ v.name }}
         </button>
       </div>
-      <p v-if="!zhVoices.length" class="settings-hint">正在加载可用音色…</p>
+      <p v-if="!zhVoices.length" class="settings-hint">{{ voiceHint }}</p>
     </fieldset>
 
     <!-- 语速 -->
