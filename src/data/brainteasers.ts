@@ -150,4 +150,28 @@ export const brainteasers: BrainTeaser[] = [
     question: '什么东西没有翅膀，却能在天上飞，还要靠风帮忙？',
     answer: '是风筝。风一吹，风筝就摇摇摆摆地飞上天了。',
   },
+  {
+    id: 'panda-eyes',
+    emoji: '🐼',
+    question: '什么动物不用熬夜，也天天顶着一对黑眼圈？',
+    answer: '是熊猫。熊猫天生就长着黑黑的眼睛圈，不是熬夜熬出来的。',
+  },
+  {
+    id: 'bottle-cap',
+    emoji: '🥤',
+    question: '什么帽子从来不戴在头上，而是专门盖在瓶子上？',
+    answer: '是瓶盖。瓶盖帮我们把水啊、汽水啊，牢牢地关在瓶子里。',
+  },
+  {
+    id: 'firework',
+    emoji: '🎆',
+    question: '什么花不用浇水，在夜空中“砰”地开一下就没了？',
+    answer: '是烟花。烟花飞到天上，开出一朵好大的花，亮一下就不见了。',
+  },
+  {
+    id: 'sunflower',
+    emoji: '🌻',
+    question: '什么花整天对着太阳笑，太阳到哪儿，它就转到哪儿？',
+    answer: '是向日葵。向日葵的脸蛋总是跟着太阳，太阳走到哪里，它就看到哪里。',
+  },
 ]
