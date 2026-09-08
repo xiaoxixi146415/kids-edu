@@ -61,6 +61,12 @@
 - [x] 绘本故事：5 → **6 篇**（新增《乌鸦喝水》5 页，寓意「遇到困难多动脑筋」）。
 - [x] 新增 21 个 id 已用 node 脚本在 6 个改动文件内复核：全部唯一，计数 32/28/20/32/32/6。
 
+## 会话 7 补充（2026-09-08）— 拼音朗读修复
+- [x] `pinyin.ts` 每个声母/韵母/整体认读音节增加汉字呼读音字段 `sound`（如 b → 玻），并改写讲解文案，避免出现拉丁字母被语音合成按英文念。
+- [x] `PinyinView.vue` 朗读改为用 `item.sound`；`HanziView.vue` 朗读去掉拉丁拼音，直接念汉字。
+- [x] `useSpeech.ts` 中文音色识别兼容 `cmn-`（部分安卓）与名称含 Chinese/中文的音色，并兼容 `zh_CN` 下划线写法。
+- [x] `npm run build`（vue-tsc -b && vite build）通过。
+
 ## 测试结果
 - 会话 7 内容扩充验证：`npm run build`（vue-tsc -b && vite build）通过，约 3.9s；vite preview 冒烟 index / vendor / index.css / manifest 均 200。
 

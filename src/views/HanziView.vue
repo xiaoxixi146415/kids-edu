@@ -20,8 +20,12 @@ const categories = computed(() => {
   return Array.from(map.entries())
 })
 
+/**
+ * 朗读内容。
+ * 注意：拼音（如 yī）是拉丁字母，中文语音合成会按英文字母念，所以读音直接念汉字本身。
+ */
 function read(item: HanziItem) {
-  return `${item.hanzi}。读音，${item.pinyin}。组词，${item.words.join('、')}。${item.text}`
+  return `${item.hanzi}。组词，${item.words.join('、')}。${item.text}`
 }
 
 function open(item: HanziItem) {

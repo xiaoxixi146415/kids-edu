@@ -71,13 +71,23 @@ function persistSettings() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value))
 }
 
+/**
+ * 判断是否中文音色。
+ * 除了 zh-* 之外还要兼容 cmn-*(部分安卓) 与名字里带 Chinese/中文 的音色，
+ * 否则挑不到中文音色时浏览器会用默认英文音色，把内容全念成英文。
+ */
+function isZhVoice(v: SpeechSynthesisVoice): boolean {
+  const lang = v.lang.toLowerCase()
+  return lang.startsWith('zh') || lang.startsWith('cmn') || /chinese|中文|普通话/i.test(v.name)
+}
+
 function refreshVoices() {
   if (!supported) return
   const voices = window.speechSynthesis.getVoices()
-  zhVoices.value = voices.filter((v) => v.lang.toLowerCase().startsWith('zh'))
+  zhVoices.value = voices.filter(isZhVoice)
   autoZhVoice =
-    voices.find((v) => v.lang.toLowerCase() === 'zh-cn') ??
-    voices.find((v) => v.lang.toLowerCase().startsWith('zh')) ??
+    voices.find((v) => v.lang.toLowerCase().replace('_', '-') === 'zh-cn') ??
+    voices.find(isZhVoice) ??
     null
   // 只要 getVoices 返回了任何音色，就说明列表已就绪（可能设备上根本没有中文音色）
   if (voices.length > 0) voicesChecked.value = true

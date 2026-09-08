@@ -20,8 +20,13 @@ const categories = computed(() => {
   return Array.from(map.entries())
 })
 
+/**
+ * 朗读内容。
+ * 注意：不能把 item.pinyin（拉丁字母）交给语音合成，中文音色会把 b 念成英文字母「bi」，
+ * 这里统一用 item.sound（汉字呼读音，如 b → 玻）来发音。
+ */
 function read(item: PinyinItem) {
-  return `${item.pinyin}，${item.example}。${item.text}`
+  return `${item.sound}，${item.example}。${item.text}`
 }
 
 function open(item: PinyinItem) {
