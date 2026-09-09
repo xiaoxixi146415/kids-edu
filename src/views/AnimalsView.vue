@@ -2,11 +2,14 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { animals, type AnimalItem } from '../data/animals'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 
+const MODULE = 'animals'
 const { speak, stop } = useSpeech()
+const { learn, isLearned } = useProgress()
 const selected = ref<AnimalItem | null>(null)
 
 /** 按 category 分组 */
@@ -26,6 +29,7 @@ function read(item: AnimalItem) {
 
 function open(item: AnimalItem) {
   selected.value = item
+  learn(MODULE, item.id)
   speak(read(item))
 }
 
@@ -49,6 +53,7 @@ onUnmounted(stop)
           :title="item.name"
           :subtitle="item.sound"
           tone="tone-teal"
+          :done="isLearned(MODULE, item.id)"
           @click="open(item)"
         />
       </div>

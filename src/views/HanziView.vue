@@ -2,11 +2,14 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { hanzi, type HanziItem } from '../data/hanzi'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 
+const MODULE = 'hanzi'
 const { speak, stop } = useSpeech()
+const { learn, isLearned } = useProgress()
 const selected = ref<HanziItem | null>(null)
 
 /** 按 category 分组 */
@@ -30,6 +33,7 @@ function read(item: HanziItem) {
 
 function open(item: HanziItem) {
   selected.value = item
+  learn(MODULE, item.id)
   speak(read(item))
 }
 
@@ -53,6 +57,7 @@ onUnmounted(stop)
           :title="item.hanzi"
           :subtitle="item.pinyin"
           tone="tone-blue"
+          :done="isLearned(MODULE, item.id)"
           @click="open(item)"
         />
       </div>

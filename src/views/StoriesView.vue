@@ -2,11 +2,14 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { stories, type Story } from '../data/stories'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AppIcon from '../components/AppIcon.vue'
 
+const MODULE = 'stories'
 const { speak, stop } = useSpeech()
+const { learn, isLearned } = useProgress()
 const current = ref<Story | null>(null)
 const page = ref(0)
 
@@ -18,6 +21,8 @@ const isLast = computed(
 function open(s: Story) {
   current.value = s
   page.value = 0
+  // 单页绘本打开即读完；多页需翻到最后一页才计入
+  if (s.pages.length <= 1) learn(MODULE, s.id)
   speak(s.pages[0].text)
 }
 
@@ -36,6 +41,8 @@ function next() {
   if (isLast.value) return
   page.value++
   speak(current.value!.pages[page.value].text)
+  // 翻到最后一页 = 整本绘本读完，得星 + 卡片打勾
+  if (isLast.value && current.value) learn(MODULE, current.value.id)
 }
 
 function readCurrent() {
@@ -55,6 +62,7 @@ onUnmounted(stop)
         :emoji="s.emoji"
         :title="s.title"
         tone="tone-amber"
+        :done="isLearned(MODULE, s.id)"
         @click="open(s)"
       />
     </div>

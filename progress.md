@@ -67,7 +67,19 @@
 - [x] `useSpeech.ts` 中文音色识别兼容 `cmn-`（部分安卓）与名称含 Chinese/中文的音色，并兼容 `zh_CN` 下划线写法。
 - [x] `npm run build`（vue-tsc -b && vite build）通过。
 
+## 会话 8（2026-09-09）— 学习激励层 + 首页改版 + 内容扩充（参考「叫叫」体验）
+- [x] 新增 `useProgress` 学习激励 composable（localStorage `kids-edu-progress` 持久化）：条目「已学」打勾 ✅、首次学完 +1⭐、每日目标 3 条达成提示、连续打卡天数（streak）。
+- [x] `BigCard` 支持 `done` 角标（右上白底绿勾 + 轻微完成态）。
+- [x] 八栏目视图全部接入激励：打开即学（百科/唐诗/识字/数学数字/动物/拼音），脑筋急转弯揭晓答案才算学完，绘本翻到最后一页才算读完并得星；卡片实时显示已学勾。
+- [x] `App.vue` 全局监听 `rewardTick` 播放飘星奖励动效（reduced-motion 兜底）；记录最近学习栏目，供首页「继续学习」。
+- [x] 首页改版为「叫叫式学习主页」：🦉 吉祥物 + 按时段问候语 + ⭐星星/🔥连续打卡/📖今日进度统计条 + 今日任务达成祝贺 + 「继续学习」卡 + 8 栏目大卡。
+- [x] 内容扩充：知识百科 32→**36**（松鼠/刺猬/沙漠/筷子；动物+2、自然+1、常识+1）；脑筋急转弯 28→**32**（彩虹/星星/牙齿/人人念错的字）；识字 32→**36 字**（鸡/风/耳/米）；动物乐园 32→**36 只**（狐狸/骆驼/天鹅/水母）；唐诗 20→**24 首**（赠汪伦/游子吟/望天门山/夜宿山寺）；绘本 6→**7 篇**（新增《小马过河》5 页，寓意「自己试一试才知道」）。
+- [x] 新增 22 个 id（encyclopedia 4 / brainteasers 4 / hanzi 4 / animals 4 / tangshi 4 / stories 1 + `小马过河` 1 共用 id 计数 6 文件）已按文件唯一。
+- [x] `npm run build`（vue-tsc -b && vite build）通过，约 3.5s；preview 冒烟首页 200。
+
 ## 测试结果
+- 会话 8：`npm run build`（vue-tsc -b && vite build）通过，约 3.5s；PWA precache 27 条目；vite preview 冒烟首页 / 标题均 200/正常。
+- 会话 8 新增 22 个内容 id 已用 node 脚本在 6 个改动文件内复核：全部唯一（计数 36/32/36/36/24/7）；TS 类型 `vue-tsc -b` 全量校验通过。
 - 会话 7 内容扩充验证：`npm run build`（vue-tsc -b && vite build）通过，约 3.9s；vite preview 冒烟 index / vendor / index.css / manifest 均 200。
 
 - `npm run build`（vue-tsc -b && vite build）：通过，68 modules；PWA precache 27 条目。

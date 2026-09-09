@@ -232,4 +232,32 @@ export const encyclopedia: EncyclopediaItem[] = [
     title: '镜子',
     text: '镜子能把我们照出来，你笑它也笑，你摆手它也摆手。每天照着镜子，就能把自己整理得干干净净。',
   },
+  {
+    id: 'squirrel',
+    category: '动物',
+    emoji: '🐿️',
+    title: '松鼠',
+    text: '松鼠有一条毛茸茸的大尾巴，像一把小降落伞。它最爱把松果藏起来，留着冬天慢慢吃。',
+  },
+  {
+    id: 'hedgehog',
+    category: '动物',
+    emoji: '🦔',
+    title: '刺猬',
+    text: '刺猬身上长满尖尖的小刺，遇到危险就把身体缩成一个小球，谁也咬不动它。',
+  },
+  {
+    id: 'desert',
+    category: '自然',
+    emoji: '🏜️',
+    title: '沙漠',
+    text: '沙漠里很少下雨，到处是一望无际的沙子。骆驼是沙漠里的好帮手，能驮着人走好远好远的路。',
+  },
+  {
+    id: 'chopsticks',
+    category: '生活常识',
+    emoji: '🥢',
+    title: '筷子',
+    text: '中国人吃饭喜欢用筷子，两根小棍子拿在手里，就能把好吃的菜夹起来送进嘴巴里。',
+  },
 ]

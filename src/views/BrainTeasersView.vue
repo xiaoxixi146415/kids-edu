@@ -2,12 +2,15 @@
 import { onUnmounted, ref } from 'vue'
 import { brainteasers, type BrainTeaser } from '../data/brainteasers'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import AppIcon from '../components/AppIcon.vue'
 
+const MODULE = 'brainteasers'
 const { speak, stop } = useSpeech()
+const { learn, isLearned } = useProgress()
 const selected = ref<BrainTeaser | null>(null)
 const showAnswer = ref(false)
 
@@ -20,6 +23,8 @@ function open(item: BrainTeaser) {
 function reveal() {
   if (!selected.value) return
   showAnswer.value = true
+  // 猜到答案才计入「学完」：得星 + 卡片打勾
+  learn(MODULE, selected.value.id)
   speak(`答案是：${selected.value.answer}`)
 }
 
@@ -40,6 +45,7 @@ onUnmounted(stop)
         :emoji="item.emoji"
         :title="item.question"
         tone="tone-purple"
+        :done="isLearned(MODULE, item.id)"
         @click="open(item)"
       />
     </div>

@@ -2,11 +2,14 @@
 import { onUnmounted, ref } from 'vue'
 import { tangshi, type Tangshi } from '../data/tangshi'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AppIcon from '../components/AppIcon.vue'
 
+const MODULE = 'tangshi'
 const { speak, stop } = useSpeech()
+const { learn, isLearned } = useProgress()
 const selected = ref<Tangshi | null>(null)
 const showMeaning = ref(false)
 
@@ -17,6 +20,7 @@ function poemText(item: Tangshi) {
 function open(item: Tangshi) {
   selected.value = item
   showMeaning.value = false
+  learn(MODULE, item.id)
   speak(poemText(item))
 }
 
@@ -44,6 +48,7 @@ onUnmounted(stop)
         :title="item.title"
         :subtitle="item.author"
         tone="tone-green"
+        :done="isLearned(MODULE, item.id)"
         @click="open(item)"
       />
     </div>

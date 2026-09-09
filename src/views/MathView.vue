@@ -2,13 +2,16 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { numbers, type MathNumber } from '../data/math'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import { useMathQuiz } from '../composables/useMathQuiz'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import AppIcon from '../components/AppIcon.vue'
 
+const MODULE = 'math'
 const { speak, stop } = useSpeech()
+const { learn, isLearned } = useProgress()
 const { quiz, picked, correct, next, pick, feedbackText } = useMathQuiz()
 const selected = ref<MathNumber | null>(null)
 const feedback = ref('')
@@ -19,6 +22,7 @@ function read(n: MathNumber) {
 
 function open(n: MathNumber) {
   selected.value = n
+  learn(MODULE, n.id)
   speak(read(n))
 }
 
@@ -58,6 +62,7 @@ onUnmounted(stop)
           :title="String(n.num)"
           :subtitle="n.chinese"
           tone="tone-red"
+          :done="isLearned(MODULE, n.id)"
           @click="open(n)"
         />
       </div>

@@ -2,11 +2,14 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { pinyin, type PinyinItem } from '../data/pinyin'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 
+const MODULE = 'pinyin'
 const { speak, stop } = useSpeech()
+const { learn, isLearned } = useProgress()
 const selected = ref<PinyinItem | null>(null)
 
 /** 按 group 分组 */
@@ -31,6 +34,7 @@ function read(item: PinyinItem) {
 
 function open(item: PinyinItem) {
   selected.value = item
+  learn(MODULE, item.id)
   speak(read(item))
 }
 
@@ -54,6 +58,7 @@ onUnmounted(stop)
           :title="item.pinyin"
           :subtitle="item.example"
           tone="tone-pink"
+          :done="isLearned(MODULE, item.id)"
           @click="open(item)"
         />
       </div>
