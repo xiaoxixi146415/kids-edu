@@ -60,6 +60,12 @@ const router = createRouter({
       component: () => import('../views/PinyinView.vue'),
       meta: { title: '拼音乐园' },
     },
+    {
+      path: '/nursery',
+      name: 'nursery',
+      component: () => import('../views/NurseryRhymesView.vue'),
+      meta: { title: '儿童歌谣' },
+    },
   ],
 })
 

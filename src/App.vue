@@ -5,15 +5,19 @@ import SoundToggle from './components/SoundToggle.vue'
 import SpeechSettings from './components/SpeechSettings.vue'
 import AppIcon from './components/AppIcon.vue'
 import { useProgress } from './composables/useProgress'
+import { useSpeech } from './composables/useSpeech'
 
 const route = useRoute()
 const router = useRouter()
+const { stop } = useSpeech()
 
 const isHome = computed(() => route.path === '/')
 const pageTitle = computed(() => (route.meta.title as string) ?? '宝宝乐园')
 const settingsOpen = ref(false)
 
 function goHome() {
+  // 返回首页前立即停掉正在朗读/播放的语音，避免过渡动画期间继续出声
+  stop()
   router.push('/')
 }
 
@@ -27,7 +31,9 @@ function skipToMain() {
 /* —— 记录最近学习的栏目（首页「继续学习」入口） —— */
 watch(
   () => route.path,
-  (path) => {
+  (path, prev) => {
+    // 从栏目回到首页（含浏览器后退/手势返回）：立即静音，不等页面过渡结束
+    if (path === '/' && prev && prev !== '/') stop()
     if (path !== '/') {
       try {
         localStorage.setItem('kids-edu-last', path)

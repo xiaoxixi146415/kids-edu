@@ -30,6 +30,7 @@
   --tone-amber: linear-gradient(135deg, #d97706, #b45309);
   --tone-pink: linear-gradient(135deg, #e11d48, #be123c);
   --tone-fuchsia: linear-gradient(135deg, #d946ef, #a21caf);
+  --tone-lime: linear-gradient(135deg, #65a30d, #3f6212);
   --tone-start: linear-gradient(135deg, #ea580c, #c2410c);
 
   /* —— 字体 —— */
@@ -536,6 +537,10 @@ button {
   background: var(--tone-fuchsia);
 }
 
+.tone-lime {
+  background: var(--tone-lime);
+}
+
 /* ===== 列表页分组 ===== */
 .group {
   margin-bottom: var(--space-2);
@@ -958,6 +963,115 @@ button {
   justify-content: center;
   gap: var(--space-3);
   margin-top: 20px;
+}
+
+/* ===== 儿童歌谣详情 ===== */
+.detail-nursery {
+  background: linear-gradient(160deg, #f7fee7, #d9f99d);
+}
+
+.rhyme-view {
+  padding-top: 4px;
+}
+
+.rhyme-stage {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rhyme-line-emoji {
+  font-size: 96px;
+  line-height: 1.15;
+}
+
+.rhyme-line-text {
+  font-size: var(--text-title);
+  font-weight: 800;
+  line-height: 1.6;
+  margin-top: 12px;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+
+.rhyme-line-num {
+  font-size: 17px;
+  font-weight: 700;
+  color: #4d7c0f;
+  margin-top: 10px;
+}
+
+.rhyme-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.rhyme-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(77, 124, 15, 0.3);
+  transition: width var(--duration-mid) ease;
+}
+
+.rhyme-dot.active {
+  width: 22px;
+  background: #4d7c0f;
+}
+
+.rhyme-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: 18px;
+}
+
+.tip-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 18px;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) 20px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #3f6212;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-fast) ease;
+}
+
+.tip-toggle:hover {
+  filter: brightness(1.04);
+}
+
+.tip-toggle:active {
+  transform: scale(0.95);
+}
+
+.tip-toggle.open {
+  background: #3f6212;
+  color: #fff;
+}
+
+.rhyme-tip {
+  display: block;
+  margin: 12px auto 0;
+  max-width: 400px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.7;
+  color: var(--color-detail-text);
+  text-align: left;
 }
 
 /* ===== 语音设置弹层 ===== */

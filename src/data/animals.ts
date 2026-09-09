@@ -18,7 +18,7 @@ export const animals: AnimalItem[] = [
     emoji: '🐱',
     name: '猫',
     sound: '喵喵',
-    fact: '猫的胡须能帮它探路，白天喜欢睡大觉，晚上出来抓老鼠。',
+    fact: '猫的胡须就像一把小尺子，能帮它量量洞口钻不钻得过去。白天它呼呼睡大觉，晚上眼睛会发亮，悄悄出来抓老鼠。',
   },
   {
     id: 'dog',
@@ -26,7 +26,7 @@ export const animals: AnimalItem[] = [
     emoji: '🐶',
     name: '狗',
     sound: '汪汪',
-    fact: '狗是人类最好的朋友，耳朵很灵，能听见很远很远的声音。',
+    fact: '狗是人类最好的朋友。它的鼻子特别灵，能闻出好多种气味，所以警察叔叔会请它帮忙找东西、抓坏人。',
   },
   {
     id: 'cow',
@@ -34,7 +34,7 @@ export const animals: AnimalItem[] = [
     emoji: '🐮',
     name: '牛',
     sound: '哞',
-    fact: '牛爱吃青草，会帮农民伯伯耕地，还给我们好喝的牛奶。',
+    fact: '牛吃草吃得很快，先粗粗吞进肚子里存着，等休息的时候再慢慢嚼一遍。它还会帮农民伯伯耕地，给我们好喝的牛奶。',
   },
   {
     id: 'sheep',
@@ -42,7 +42,7 @@ export const animals: AnimalItem[] = [
     emoji: '🐑',
     name: '羊',
     sound: '咩',
-    fact: '羊穿着软软的毛大衣，它那身毛可以纺成暖暖的毛线。',
+    fact: '羊穿着一件厚厚的毛大衣。每年到了夏天，人们会轻轻帮它把毛剪短，这些羊毛纺成线、织成布，就能做成暖暖的衣服。',
   },
   {
     id: 'horse',
@@ -50,7 +50,7 @@ export const animals: AnimalItem[] = [
     emoji: '🐴',
     name: '马',
     sound: '咴咴',
-    fact: '马跑得飞快，哒哒哒，还能驮着人一起去旅行。',
+    fact: '马跑得飞快，哒哒哒。马的腿又长又有力，它的蹄子踩在地上会发出清脆的响声，还能驮着人一起走很远的路。',
   },
   {
     id: 'lion',
@@ -82,7 +82,7 @@ export const animals: AnimalItem[] = [
     emoji: '🐰',
     name: '兔子',
     sound: '嗒嗒',
-    fact: '兔子有两只长长的耳朵，爱吃胡萝卜，跳起来一蹦一蹦的。',
+    fact: '兔子有两只长长的耳朵，天热的时候，大耳朵能帮它把热气散掉。它爱吃胡萝卜和青菜，跳起来一蹦一蹦，跑得可快了。',
   },
   {
     id: 'monkey',

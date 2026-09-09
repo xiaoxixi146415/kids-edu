@@ -91,7 +91,17 @@
 - [x] 扩展 3 页玩法：**找不同**（上排原样 vs 下排对照，把变样格子都点出）、**谁不见了**（先记一记 3s → 躲猫猫 → 从回来的小伙伴里找出缺谁）、**影子找朋友**（看彩色小动物点出黑影剪影）；`goal` 扩为 `spot-diff`/`whats-missing`/`shadow`，含 `reference/memory/after` 字段与记忆阶段状态机。
 - [x] 首页「安静书」卡 `total` 6→9（栏目标签/进度自动联动）；`npm run build`（vue-tsc -b && vite build）通过。
 
+## 会话 11（2026-09-09）— 儿童歌谣上线 + 大班内容调适 + 导航语音细节
+- [x] 新增「儿童歌谣」模块 `/nursery`：`nursery.ts` 9 首传统童谣（动物/自然/生活/游戏 4 组），歌词逐句拆分 + 每句 emoji 剧场 + 「想一想」大班互动提问；新 `--tone-lime`、`detail-nursery` 主题。
+- [x] `NurseryRhymesView.vue` 逐句动画剧场：点卡弹层逐句大字动画（pop 翻页 + dots），「连唱一遍」逐句朗读自动翻页，唱到末句/连唱完毕计入 `useProgress.learn`；静音/无声设备用 900ms 节拍演示兜底。
+- [x] `useSpeech` 新增 `speakLines(texts, onTick?, onDone?)`：按句顺序朗读、每句回调句下标，供逐句画面同步（1 句 ↔ 1 回调，不打散，stop/新一轮自动打断）。
+- [x] 首页第 10 张卡「🎵 儿童歌谣」（total 9）；路由 `/nursery` + meta title。
+- [x] 大班化抽样加深（不整卷重写）：百科太阳/月亮/彩虹/影子/云/大海 6 条补因果逻辑（发光恒星/反射光/折射七色/直线遮光/水循环/海水含盐）；动物猫/狗/牛/马/羊/兔 6 条 fact 加深（胡须探路/嗅觉找物/反刍/蹄声/羊毛纺织/耳朵散热）。
+- [x] 导航语音细节：`App.vue` 返回首页前 `stop()` 立即静音 + route watcher 兜底（浏览器后退/手势从栏目回首页时不等页面过渡结束即静音），不再掐断首页点卡「栏目名」引导语。
+- [x] `npm run build`（vue-tsc -b && vite build）通过，新增 NurseryRhymesView chunk 8.55KB（gzip 3.94）；README 同步新增歌谣/安静书栏目说明与数据文件条目。
+
 ## 测试结果
+- 会话 11：`npm run build`（vue-tsc -b && vite build）通过，1.90s；PWA precache 32 条目；vite preview 冒烟 200。
 - 会话 8：`npm run build`（vue-tsc -b && vite build）通过，约 3.5s；PWA precache 27 条目；vite preview 冒烟首页 / 标题均 200/正常。
 - 会话 8 新增 22 个内容 id 已用 node 脚本在 6 个改动文件内复核：全部唯一（计数 36/32/36/36/24/7）；TS 类型 `vue-tsc -b` 全量校验通过。
 - 会话 7 内容扩充验证：`npm run build`（vue-tsc -b && vite build）通过，约 3.9s；vite preview 冒烟 index / vendor / index.css / manifest 均 200。

@@ -179,6 +179,45 @@ function speak(text: string) {
   play()
 }
 
+/**
+ * 按「句」顺序朗读，每句开始前回调 onTick(句下标)，全部读完回调 onDone。
+ * 用于儿歌等需要「逐句朗读、逐句同步画面」的场景；
+ * 不拆句，保证 1 句 ↔ 1 次回调一一对应。被打断（stop/新一轮 speak）后不再回调。
+ */
+function speakLines(lines: string[], onTick?: (i: number) => void, onDone?: () => void) {
+  if (!supported || muted.value || lines.length === 0) return
+  const synth = window.speechSynthesis
+  refreshVoices()
+  const voice = resolveVoice()
+  const seq = ++speakSeq
+  synth.cancel()
+  let i = 0
+  const play = () => {
+    if (seq !== speakSeq) return // 已被 stop/新一轮打断
+    if (i >= lines.length) {
+      onDone?.()
+      return
+    }
+    onTick?.(i)
+    const line = lines[i]
+    i++
+    if (!line.trim()) {
+      play()
+      return
+    }
+    const u = new SpeechSynthesisUtterance(line)
+    u.lang = 'zh-CN'
+    u.rate = settings.value.rate
+    u.pitch = 1.05
+    if (voice) u.voice = voice
+    u.onend = play
+    u.onerror = play // 单句出错也继续下一句，避免中断
+    synth.speak(u)
+    synth.resume()
+  }
+  play()
+}
+
 /** 停止当前朗读 */
 function stop() {
   if (!supported) return
@@ -219,6 +258,7 @@ init()
 export function useSpeech() {
   return {
     speak,
+    speakLines,
     stop,
     toggleMute,
     unlock,

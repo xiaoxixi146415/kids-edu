@@ -2,18 +2,20 @@
 
 专为幼儿（不识字的小朋友）设计的有声教育小应用。点一点，就会朗读出来。
 
-包含八大栏目：
+包含十大栏目：
 
 | 栏目 | 说明 | 演示 |
 | --- | --- | --- |
-| 📖 **知识百科** | 动物、自然的趣味小知识，点开自动朗读 | 大象为什么用鼻子喷水？ |
+| 📖 **知识百科** | 动物、自然的趣味小知识，点开自动朗读 | 太阳为什么发光？ |
 | 🤔 **脑筋急转弯** | 先读题目，点「揭晓答案」再读答案 | 什么东西越洗越脏？ |
 | 📜 **唐诗** | 经典唐诗 + 白话译文，读古诗 / 听译文 | 静夜思、春晓、咏鹅…… |
 | ✏️ **识字认字** | 大字形 + 拼音 + 组词，认一认汉字 | 一、日、山、水…… |
 | 🔢 **数学启蒙** | 数字认知 + 数一数/加减法趣味练习 | 0-9 数字、3 选 1 练习 |
 | 🦁 **动物乐园** | 认识动物，听叫声和讲解 | 大象、老虎、海豚…… |
-| 📚 **绘本故事** | 逐页翻读的有声小故事 | 3 篇 4-5 页小故事 |
+| 📚 **绘本故事** | 逐页翻读的有声小故事 | 小马过河、龟兔赛跑…… |
 | 🔤 **拼音乐园** | 声母、韵母、整体认读，认音学词 | b、a、zh、yi…… |
+| 📖 **安静书** | 电子机关书，点一点玩法合集 | 数一数、找不同、谁不见了…… |
+| 🎵 **儿童歌谣** | 逐句动画童谣剧场，连唱一遍自动翻句 | 小星星、两只老虎、拔萝卜…… |
 
 语音方案：浏览器内置语音（Web Speech API），**免费、无后端、无 API Key**，慢速朗读方便幼儿跟读。
 
@@ -120,9 +122,11 @@ npm run gen-icons  # 重新生成 PWA 图标（改过 favicon.svg 后运行）
 - `tangshi.ts` → 唐诗：`{ id, title, author, dynasty, emoji, lines[], meaning }`
 - `hanzi.ts` → 识字认字：`{ id, category, emoji, hanzi, pinyin, words[], text }`
 - `math.ts` → 数学启蒙：`{ id, emoji, number, cn, count }`
-- `animals.ts` → 动物乐园：`{ id, group, emoji, name, sound, text }`
+- `animals.ts` → 动物乐园：`{ id, category, emoji, name, sound, fact }`
 - `stories.ts` → 绘本故事：`{ id, emoji, title, pages[] }`
 - `pinyin.ts` → 拼音乐园：`{ id, group, pinyin, example, emoji, text }`
+- `quietbook.ts` → 安静书：`{ id, title, emoji, bg, accent, rounds[] }`（goal 支持 pick-one/pick-all/spot-diff/whats-missing/shadow）
+- `nursery.ts` → 儿童歌谣：`{ id, category, emoji, title, lines[]{emoji,text}, tip }`
 
 例如在 `brainteasers.ts` 数组末尾加一条：
 
