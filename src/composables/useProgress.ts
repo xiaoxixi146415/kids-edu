@@ -3,9 +3,10 @@
  *
  * - 学过一个条目（module:key）→ 该条目记「已学」，卡片打勾 ✅
  * - 首次学完一个条目 → 奖励 1 颗星 ⭐
- * - 每天学满 DAILY_GOAL 个（不同）条目 → 今日任务达成
+ * - 闯关答题（passQuiz）：每个栏目每天首次闯关成功 → 奖励 1 颗星 ⭐ 并计入今日任务
  * - 每天只要学了新条目，就计入连续打卡天数（streak）
  * - 全部持久化到 localStorage（key: kids-edu-progress），App 重开仍在
+ * - reset()：家长在设置里重置全部学习记录
  *
  * 共享实现：模块级 ref 单例，任意组件调用同一份状态；
  * rewardTick 供 App.vue 监听，在首次得星时播放飘星动效。
@@ -47,6 +48,8 @@ interface Persisted {
   lastDate: string
   /** 今日学过的不同条目 key */
   todayKeys: string[]
+  /** 今日已闯关成功的栏目（每次只算一天，日期切换即清） */
+  quizAwarded: string[]
 }
 
 /* —— 模块级单例状态 —— */
@@ -55,6 +58,7 @@ const learned = ref<string[]>([])
 const streak = ref(0)
 const todayKeys = ref<string[]>([])
 const lastDate = ref('')
+const quizAwarded = ref<string[]>([])
 
 /** 今日已学（不同条目）数量 */
 const todayCount = ref(0)
@@ -73,6 +77,7 @@ function persist() {
     streak: streak.value,
     lastDate: lastDate.value,
     todayKeys: todayKeys.value,
+    quizAwarded: quizAwarded.value,
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
@@ -90,9 +95,11 @@ function load() {
     const today = dayKey()
     if (lastDate.value === today) {
       todayKeys.value = Array.isArray(data.todayKeys) ? data.todayKeys : []
+      quizAwarded.value = Array.isArray(data.quizAwarded) ? data.quizAwarded : []
     } else {
       // 今天还没学：新一天计数清零，连续天数若断档则归零
       todayKeys.value = []
+      quizAwarded.value = []
       if (lastDate.value && !isYesterday(lastDate.value, today)) streak.value = 0
     }
     todayCount.value = todayKeys.value.length
@@ -103,7 +110,27 @@ function load() {
     streak.value = 0
     todayKeys.value = []
     lastDate.value = ''
+    quizAwarded.value = []
     todayCount.value = 0
+  }
+}
+
+/** 若跨天则滚入新一天：更新连续天数、清空今日去重记录 */
+function rollDay(today: string) {
+  if (lastDate.value !== today) {
+    streak.value = lastDate.value && isYesterday(lastDate.value, today) ? streak.value + 1 : 1
+    lastDate.value = today
+    todayKeys.value = []
+    quizAwarded.value = []
+  }
+}
+
+/** 记一条「今日学习」并同步 todayCount（供 learn/passQuiz 共用，日期已由 rollDay 处理） */
+function touchToday(key: string) {
+  if (!todayKeys.value.includes(key)) {
+    // 整体重赋值，确保模板中 includes/length 依赖能被触发
+    todayKeys.value = [...todayKeys.value, key]
+    todayCount.value = todayKeys.value.length
   }
 }
 
@@ -111,20 +138,10 @@ function load() {
 function learn(module: string, id: string): boolean {
   const key = keyOf(module, id)
   const first = !learned.value.includes(key)
-
   const today = dayKey()
-  if (lastDate.value !== today) {
-    // 开启新的一天：更新连续天数
-    streak.value = lastDate.value && isYesterday(lastDate.value, today) ? streak.value + 1 : 1
-    lastDate.value = today
-    todayKeys.value = []
-  }
 
-  if (!todayKeys.value.includes(key)) {
-    // 整体重赋值，确保模板中 includes/length 依赖能被触发
-    todayKeys.value = [...todayKeys.value, key]
-    todayCount.value = todayKeys.value.length
-  }
+  rollDay(today)
+  touchToday(key)
 
   if (first) {
     learned.value = [...learned.value, key]
@@ -134,6 +151,29 @@ function learn(module: string, id: string): boolean {
   }
   persist()
   return first
+}
+
+/**
+ * 闯关答题得星：每个栏目每天首次闯关成功计 1 颗星并计入今日任务。
+ * 返回是否新得星（今天该栏目已经得过则不再重复给）。
+ */
+function passQuiz(module: string): boolean {
+  const today = dayKey()
+  const key = `${module}:${today}`
+  const fresh = !quizAwarded.value.includes(key)
+
+  rollDay(today)
+  // 与普通学习一样计入今日进度（用独立前缀，避免与条目 key 混淆）
+  touchToday(`quiz:${key}`)
+
+  if (fresh) {
+    quizAwarded.value = [...quizAwarded.value, key]
+    stars.value += 1
+    rewardText.value = '🎯 闯关成功 ⭐ +1'
+    rewardTick.value += 1
+  }
+  persist()
+  return fresh
 }
 
 /** 该条目是否已学过（用于卡片打勾） */
@@ -150,9 +190,20 @@ function learnedCount(module: string): number {
 /** 是否达成今日任务 */
 const todayDone = computed(() => todayCount.value >= DAILY_GOAL)
 
+/** 家长重置全部学习记录 */
+function reset() {
+  stars.value = 0
+  learned.value = []
+  streak.value = 0
+  todayKeys.value = []
+  quizAwarded.value = []
+  lastDate.value = dayKey()
+  todayCount.value = 0
+  persist()
+}
+
 load()
 
-// 学习后即时刷新今日达成状态
 export function useProgress() {
   return {
     /** 累计星星 */
@@ -167,10 +218,14 @@ export function useProgress() {
     dailyGoal: DAILY_GOAL,
     /** 记录一次学习，返回是否首次（新得星） */
     learn,
+    /** 闯关答题得星，返回是否新得星 */
+    passQuiz,
     /** 该条目是否已学 */
     isLearned,
     /** 栏目已学数量 */
     learnedCount,
+    /** 重置全部学习记录 */
+    reset,
     /** 奖励自增信号 / 文案（App.vue 监听播放动效） */
     rewardTick: readonly(rewardTick),
     rewardText: readonly(rewardText),

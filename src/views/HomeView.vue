@@ -8,19 +8,31 @@ import AppIcon from '../components/AppIcon.vue'
 
 const router = useRouter()
 const { speak, unlock, unlocked, supported } = useSpeech()
-const { stars, streak, todayCount, dailyGoal, todayDone } = useProgress()
+const { stars, streak, todayCount, dailyGoal, todayDone, learnedCount } = useProgress()
 
-/** 最近学过的栏目（由 App.vue 记录到 localStorage），用于「继续学习」 */
+/** 首页入口卡：module 供学情统计用，total 为各栏目数据量 */
 const CATEGORIES = [
-  { path: '/encyclopedia', emoji: '📖', title: '知识百科', subtitle: '认识世界', tone: 'tone-orange' },
-  { path: '/brainteasers', emoji: '🤔', title: '脑筋急转弯', subtitle: '动动小脑瓜', tone: 'tone-purple' },
-  { path: '/tangshi', emoji: '📜', title: '唐诗', subtitle: '跟着念古诗', tone: 'tone-green' },
-  { path: '/hanzi', emoji: '✏️', title: '识字认字', subtitle: '认一认汉字', tone: 'tone-blue' },
-  { path: '/math', emoji: '🔢', title: '数学启蒙', subtitle: '数一数算一算', tone: 'tone-red' },
-  { path: '/animals', emoji: '🦁', title: '动物乐园', subtitle: '听听动物朋友', tone: 'tone-teal' },
-  { path: '/stories', emoji: '📚', title: '绘本故事', subtitle: '翻翻听故事', tone: 'tone-amber' },
-  { path: '/pinyin', emoji: '🔤', title: '拼音乐园', subtitle: '认声母学韵母', tone: 'tone-pink' },
+  { path: '/encyclopedia', module: 'encyclopedia', total: 36, emoji: '📖', title: '知识百科', subtitle: '认识世界', tone: 'tone-orange' },
+  { path: '/brainteasers', module: 'brainteasers', total: 32, emoji: '🤔', title: '脑筋急转弯', subtitle: '动动小脑瓜', tone: 'tone-purple' },
+  { path: '/tangshi', module: 'tangshi', total: 24, emoji: '📜', title: '唐诗', subtitle: '跟着念古诗', tone: 'tone-green' },
+  { path: '/hanzi', module: 'hanzi', total: 36, emoji: '✏️', title: '识字认字', subtitle: '认一认汉字', tone: 'tone-blue' },
+  { path: '/math', module: 'math', total: 10, emoji: '🔢', title: '数学启蒙', subtitle: '数一数算一算', tone: 'tone-red' },
+  { path: '/animals', module: 'animals', total: 36, emoji: '🦁', title: '动物乐园', subtitle: '听听动物朋友', tone: 'tone-teal' },
+  { path: '/stories', module: 'stories', total: 7, emoji: '📚', title: '绘本故事', subtitle: '翻翻听故事', tone: 'tone-amber' },
+  { path: '/pinyin', module: 'pinyin', total: 63, emoji: '🔤', title: '拼音乐园', subtitle: '认声母学韵母', tone: 'tone-pink' },
 ] as const
+
+type Category = (typeof CATEGORIES)[number]
+
+/** 某栏目已学 >0 时显示角标 x/N */
+function cornerOf(c: Category): string {
+  const n = learnedCount(c.module)
+  return n > 0 ? `${n}/${c.total}` : ''
+}
+
+/** 全站累计学完条目 */
+const overallLearned = computed(() => CATEGORIES.reduce((s, c) => s + learnedCount(c.module), 0))
+const overallTotal = computed(() => CATEGORIES.reduce((s, c) => s + c.total, 0))
 
 const lastPath = ref('')
 try {
@@ -30,8 +42,6 @@ try {
 }
 
 const lastModule = computed(() => CATEGORIES.find((c) => c.path === lastPath.value) ?? null)
-
-type Category = (typeof CATEGORIES)[number]
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -89,6 +99,9 @@ function continueLearn(cat: Category) {
         </div>
       </div>
       <p v-if="todayDone" class="task-done" role="status">🎉 今日任务完成啦，你真棒！明天也要来哦</p>
+      <p v-if="overallLearned > 0" class="overall-line" role="status">
+        🎓 已认识 <b>{{ overallLearned }}</b> / {{ overallTotal }} 个内容，继续加油！
+      </p>
     </template>
 
     <!-- 继续学习 -->
@@ -113,6 +126,7 @@ function continueLearn(cat: Category) {
         :title="cat.title"
         :subtitle="cat.subtitle"
         :tone="cat.tone"
+        :corner="cornerOf(cat)"
         @click="open(cat)"
       />
     </div>

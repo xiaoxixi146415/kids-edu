@@ -3,25 +3,51 @@ import { computed, onUnmounted, ref } from 'vue'
 import { hanzi, type HanziItem } from '../data/hanzi'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { buildPickQuiz } from '../composables/useChallenge'
+import type { LearnFilter } from '../components/ModuleLearnBar.vue'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
+import ModuleLearnBar from '../components/ModuleLearnBar.vue'
+import ChallengeLauncher from '../components/ChallengeLauncher.vue'
 
 const MODULE = 'hanzi'
 const { speak, stop } = useSpeech()
-const { learn, isLearned } = useProgress()
+const { learn, isLearned, learnedCount } = useProgress()
 const selected = ref<HanziItem | null>(null)
 
-/** 按 category 分组 */
+const filter = ref<LearnFilter>('all')
+const progress = computed(() => ({ learned: learnedCount(MODULE), total: hanzi.length }))
+
+/** 按 category 分组，并应用筛选 */
 const categories = computed(() => {
   const map = new Map<string, HanziItem[]>()
   for (const item of hanzi) {
+    if (filter.value === 'todo' && isLearned(MODULE, item.id)) continue
+    if (filter.value === 'done' && !isLearned(MODULE, item.id)) continue
     const list = map.get(item.category) ?? []
     list.push(item)
     map.set(item.category, list)
   }
-  return Array.from(map.entries())
+  return Array.from(map.entries()).filter(([, list]) => list.length > 0)
 })
+
+const emptyText = computed(() => {
+  if (filter.value === 'todo') return '🎉 太棒了！这里的字你都认识啦'
+  if (filter.value === 'done') return '还没有学过的字，点上面的大卡片认一认吧'
+  return ''
+})
+
+/**
+ * 今日小挑战：听读音（直接念汉字，避免拼音被 TTS 念成英文）→ 从 3 个大汉字里选对。
+ */
+function buildChallenge() {
+  return buildPickQuiz(
+    hanzi.map((h) => ({ id: h.id, label: h.hanzi, emoji: h.emoji })),
+    5,
+    'chars'
+  )
+}
 
 /**
  * 朗读内容。
@@ -47,21 +73,27 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
-    <section v-for="[cat, items] in categories" :key="cat" class="group">
-      <h2 class="group-title">{{ cat }}</h2>
-      <div class="grid">
-        <BigCard
-          v-for="item in items"
-          :key="item.id"
-          :emoji="item.emoji"
-          :title="item.hanzi"
-          :subtitle="item.pinyin"
-          tone="tone-blue"
-          :done="isLearned(MODULE, item.id)"
-          @click="open(item)"
-        />
-      </div>
-    </section>
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ChallengeLauncher module="hanzi" label="识字认字" :build="buildChallenge" />
+
+    <template v-if="categories.length">
+      <section v-for="[cat, items] in categories" :key="cat" class="group">
+        <h2 class="group-title">{{ cat }}</h2>
+        <div class="grid">
+          <BigCard
+            v-for="item in items"
+            :key="item.id"
+            :emoji="item.emoji"
+            :title="item.hanzi"
+            :subtitle="item.pinyin"
+            tone="tone-blue"
+            :done="isLearned(MODULE, item.id)"
+            @click="open(item)"
+          />
+        </div>
+      </section>
+    </template>
+    <p v-else class="list-empty" role="status">{{ emptyText }}</p>
 
     <DetailDialog
       :open="!!selected"

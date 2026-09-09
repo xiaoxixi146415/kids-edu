@@ -77,6 +77,14 @@
 - [x] 新增 22 个 id（encyclopedia 4 / brainteasers 4 / hanzi 4 / animals 4 / tangshi 4 / stories 1 + `小马过河` 1 共用 id 计数 6 文件）已按文件唯一。
 - [x] `npm run build`（vue-tsc -b && vite build）通过，约 3.5s；preview 冒烟首页 200。
 
+## 会话 9（2026-09-09）— 学情工具条 + 今日小挑战 + 家长重置
+- [x] 新增 `ModuleLearnBar.vue` 栏目学情工具条：已学进度条（role=progressbar）+ 百分比 + 「全部/没学过/学过」筛选 chips + 全部学完祝贺语；接入 6 个栏目列表页（百科/脑筋/唐诗/识字/动物/拼音）。
+- [x] 新增「今日小挑战」闯关答题（叫叫式互动练习）：`useChallenge.ts` 题库生成器 + `QuizDialog.vue` 通用闯关弹层（答题点选/答错自动纠正高亮/🔊重听/结算星星屏）+ `ChallengeLauncher.vue` 入口横幅。接入百科（听名认图）、动物（听声认图）、识字（听音选大字）、唐诗（接下一句）。
+- [x] 闯关激励：`useProgress` 新增 `passQuiz(module)` —— 每栏目每天首次答对 ≥3/5 通关 +1⭐ 并计入今日任务；`rewardTick` 飘星动效自动复用。
+- [x] 首页改版补充：每张栏目卡左上角「已学 x/N」角标（`BigCard.corner`），新增全站累计「已认识 x/总数 个内容」进度行（真实数据计数 36/32/24/36/10/36/7/63 已核对）。
+- [x] 设置面板升级：改为「设置」，新增学习记录区（⭐累计/🔥连续/今日进度统计 + 本地存储说明）+ 重置学习记录（4s 内二次点击确认防误触）。
+- [x] `npm run build`（vue-tsc -b && vite build）通过；preview 冒烟 200。
+
 ## 测试结果
 - 会话 8：`npm run build`（vue-tsc -b && vite build）通过，约 3.5s；PWA precache 27 条目；vite preview 冒烟首页 / 标题均 200/正常。
 - 会话 8 新增 22 个内容 id 已用 node 脚本在 6 个改动文件内复核：全部唯一（计数 36/32/36/36/24/7）；TS 类型 `vue-tsc -b` 全量校验通过。

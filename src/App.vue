@@ -70,7 +70,7 @@ watch(rewardTick, (n, prev) => {
         <button
           type="button"
           class="sound-toggle"
-          aria-label="语音设置"
+          aria-label="设置"
           :aria-haspopup="true"
           :aria-expanded="settingsOpen"
           @click="settingsOpen = true"

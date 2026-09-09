@@ -3,24 +3,37 @@ import { computed, onUnmounted, ref } from 'vue'
 import { pinyin, type PinyinItem } from '../data/pinyin'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import type { LearnFilter } from '../components/ModuleLearnBar.vue'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
+import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 
 const MODULE = 'pinyin'
 const { speak, stop } = useSpeech()
-const { learn, isLearned } = useProgress()
+const { learn, isLearned, learnedCount } = useProgress()
 const selected = ref<PinyinItem | null>(null)
 
-/** 按 group 分组 */
+const filter = ref<LearnFilter>('all')
+const progress = computed(() => ({ learned: learnedCount(MODULE), total: pinyin.length }))
+
+/** 按 group 分组，并应用筛选 */
 const categories = computed(() => {
   const map = new Map<string, PinyinItem[]>()
   for (const item of pinyin) {
+    if (filter.value === 'todo' && isLearned(MODULE, item.id)) continue
+    if (filter.value === 'done' && !isLearned(MODULE, item.id)) continue
     const list = map.get(item.group) ?? []
     list.push(item)
     map.set(item.group, list)
   }
-  return Array.from(map.entries())
+  return Array.from(map.entries()).filter(([, list]) => list.length > 0)
+})
+
+const emptyText = computed(() => {
+  if (filter.value === 'todo') return '🎉 太棒了！拼音你都学完啦'
+  if (filter.value === 'done') return '还没有学过的拼音，点上面的大卡片认一认吧'
+  return ''
 })
 
 /**
@@ -48,21 +61,26 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
-    <section v-for="[cat, items] in categories" :key="cat" class="group">
-      <h2 class="group-title">{{ cat }}</h2>
-      <div class="grid">
-        <BigCard
-          v-for="item in items"
-          :key="item.id"
-          :emoji="item.emoji"
-          :title="item.pinyin"
-          :subtitle="item.example"
-          tone="tone-pink"
-          :done="isLearned(MODULE, item.id)"
-          @click="open(item)"
-        />
-      </div>
-    </section>
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+
+    <template v-if="categories.length">
+      <section v-for="[cat, items] in categories" :key="cat" class="group">
+        <h2 class="group-title">{{ cat }}</h2>
+        <div class="grid">
+          <BigCard
+            v-for="item in items"
+            :key="item.id"
+            :emoji="item.emoji"
+            :title="item.pinyin"
+            :subtitle="item.example"
+            tone="tone-pink"
+            :done="isLearned(MODULE, item.id)"
+            @click="open(item)"
+          />
+        </div>
+      </section>
+    </template>
+    <p v-else class="list-empty" role="status">{{ emptyText }}</p>
 
     <DetailDialog
       :open="!!selected"

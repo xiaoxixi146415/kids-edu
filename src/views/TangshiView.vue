@@ -1,17 +1,55 @@
 <script setup lang="ts">
-import { onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { tangshi, type Tangshi } from '../data/tangshi'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { buildCoupletQuiz, type CoupletUnit } from '../composables/useChallenge'
+import type { LearnFilter } from '../components/ModuleLearnBar.vue'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AppIcon from '../components/AppIcon.vue'
+import ModuleLearnBar from '../components/ModuleLearnBar.vue'
+import ChallengeLauncher from '../components/ChallengeLauncher.vue'
 
 const MODULE = 'tangshi'
 const { speak, stop } = useSpeech()
-const { learn, isLearned } = useProgress()
+const { learn, isLearned, learnedCount } = useProgress()
 const selected = ref<Tangshi | null>(null)
 const showMeaning = ref(false)
+
+const filter = ref<LearnFilter>('all')
+const progress = computed(() => ({ learned: learnedCount(MODULE), total: tangshi.length }))
+
+/** 应用筛选后的列表 */
+const items = computed(() =>
+  tangshi.filter((t) => {
+    if (filter.value === 'todo' && isLearned(MODULE, t.id)) return false
+    if (filter.value === 'done' && !isLearned(MODULE, t.id)) return false
+    return true
+  })
+)
+
+const emptyText = computed(() => {
+  if (filter.value === 'todo') return '🎉 太棒了！这些诗你都会背啦'
+  if (filter.value === 'done') return '还没有学过的诗，点上面的大卡片背一背吧'
+  return ''
+})
+
+/** 把整句诗拆成「上一句 → 下一句」的对子，供接句挑战用 */
+const coupletPool = computed<CoupletUnit[]>(() =>
+  tangshi.flatMap((t) => {
+    const out: CoupletUnit[] = []
+    for (let i = 0; i + 1 < t.lines.length; i += 2) {
+      out.push({ id: `${t.id}:${i}`, lead: t.lines[i], answer: t.lines[i + 1] })
+    }
+    return out
+  })
+)
+
+/** 今日小挑战：展示上一句，选对下一句 */
+function buildChallenge() {
+  return buildCoupletQuiz(coupletPool.value, 5)
+}
 
 function poemText(item: Tangshi) {
   return `${item.lines.join('，')}。`
@@ -40,18 +78,24 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
-    <div class="grid">
-      <BigCard
-        v-for="item in tangshi"
-        :key="item.id"
-        :emoji="item.emoji"
-        :title="item.title"
-        :subtitle="item.author"
-        tone="tone-green"
-        :done="isLearned(MODULE, item.id)"
-        @click="open(item)"
-      />
-    </div>
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ChallengeLauncher module="tangshi" label="唐诗" :build="buildChallenge" />
+
+    <template v-if="items.length">
+      <div class="grid">
+        <BigCard
+          v-for="item in items"
+          :key="item.id"
+          :emoji="item.emoji"
+          :title="item.title"
+          :subtitle="item.author"
+          tone="tone-green"
+          :done="isLearned(MODULE, item.id)"
+          @click="open(item)"
+        />
+      </div>
+    </template>
+    <p v-else class="list-empty" role="status">{{ emptyText }}</p>
 
     <DetailDialog
       :open="!!selected"
