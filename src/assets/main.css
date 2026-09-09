@@ -29,6 +29,7 @@
   --tone-teal: linear-gradient(135deg, #0d9488, #0f766e);
   --tone-amber: linear-gradient(135deg, #d97706, #b45309);
   --tone-pink: linear-gradient(135deg, #e11d48, #be123c);
+  --tone-fuchsia: linear-gradient(135deg, #d946ef, #a21caf);
   --tone-start: linear-gradient(135deg, #ea580c, #c2410c);
 
   /* —— 字体 —— */
@@ -529,6 +530,10 @@ button {
 
 .tone-pink {
   background: var(--tone-pink);
+}
+
+.tone-fuchsia {
+  background: var(--tone-fuchsia);
 }
 
 /* ===== 列表页分组 ===== */

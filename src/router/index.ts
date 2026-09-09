@@ -49,6 +49,12 @@ const router = createRouter({
       meta: { title: '绘本故事' },
     },
     {
+      path: '/quietbook',
+      name: 'quietbook',
+      component: () => import('../views/QuietBookView.vue'),
+      meta: { title: '安静书' },
+    },
+    {
       path: '/pinyin',
       name: 'pinyin',
       component: () => import('../views/PinyinView.vue'),

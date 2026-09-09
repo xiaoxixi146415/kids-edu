@@ -85,6 +85,12 @@
 - [x] 设置面板升级：改为「设置」，新增学习记录区（⭐累计/🔥连续/今日进度统计 + 本地存储说明）+ 重置学习记录（4s 内二次点击确认防误触）。
 - [x] `npm run build`（vue-tsc -b && vite build）通过；preview 冒烟 200。
 
+## 会话 10（2026-09-09）— 安静书模块上线 + 三种新玩法
+- [x] 新增「安静书」互动模块 `/quietbook`：内容模型（QbOption/QbRound）+ `quietbook.ts` 题库 + `QuietBookView.vue` 电子机关引擎（书页 chips/回合 dots/语音引导/整页完成计入 `useProgress` 激励）。
+- [x] 基线 6 页纯点选玩法：穿衣小帮手 / 颜色点点 / 数一数 / 动物吃什么 / 果蔬分类 / 动物住哪里（pick-one 单选 + pick-all 收进小篮，点错摇一摇不挫败）。
+- [x] 扩展 3 页玩法：**找不同**（上排原样 vs 下排对照，把变样格子都点出）、**谁不见了**（先记一记 3s → 躲猫猫 → 从回来的小伙伴里找出缺谁）、**影子找朋友**（看彩色小动物点出黑影剪影）；`goal` 扩为 `spot-diff`/`whats-missing`/`shadow`，含 `reference/memory/after` 字段与记忆阶段状态机。
+- [x] 首页「安静书」卡 `total` 6→9（栏目标签/进度自动联动）；`npm run build`（vue-tsc -b && vite build）通过。
+
 ## 测试结果
 - 会话 8：`npm run build`（vue-tsc -b && vite build）通过，约 3.5s；PWA precache 27 条目；vite preview 冒烟首页 / 标题均 200/正常。
 - 会话 8 新增 22 个内容 id 已用 node 脚本在 6 个改动文件内复核：全部唯一（计数 36/32/36/36/24/7）；TS 类型 `vue-tsc -b` 全量校验通过。

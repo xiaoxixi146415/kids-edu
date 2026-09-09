@@ -18,6 +18,7 @@ const CATEGORIES = [
   { path: '/hanzi', module: 'hanzi', total: 36, emoji: '✏️', title: '识字认字', subtitle: '认一认汉字', tone: 'tone-blue' },
   { path: '/math', module: 'math', total: 10, emoji: '🔢', title: '数学启蒙', subtitle: '数一数算一算', tone: 'tone-red' },
   { path: '/animals', module: 'animals', total: 36, emoji: '🦁', title: '动物乐园', subtitle: '听听动物朋友', tone: 'tone-teal' },
+  { path: '/quietbook', module: 'quietbook', total: 9, emoji: '🧸', title: '安静书', subtitle: '点一点 动手玩', tone: 'tone-fuchsia' },
   { path: '/stories', module: 'stories', total: 7, emoji: '📚', title: '绘本故事', subtitle: '翻翻听故事', tone: 'tone-amber' },
   { path: '/pinyin', module: 'pinyin', total: 63, emoji: '🔤', title: '拼音乐园', subtitle: '认声母学韵母', tone: 'tone-pink' },
 ] as const
