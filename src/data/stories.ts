@@ -1,3 +1,5 @@
+import type { ContentItem } from '../types'
+
 export interface StoryPage {
   /** 本页大字插图 emoji */
   emoji: string
@@ -5,10 +7,8 @@ export interface StoryPage {
   text: string
 }
 
-export interface Story {
-  id: string
+export interface Story extends ContentItem {
   title: string
-  emoji: string
   pages: StoryPage[]
 }
 

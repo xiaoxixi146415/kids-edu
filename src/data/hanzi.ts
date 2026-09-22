@@ -1,8 +1,9 @@
-export interface HanziItem {
-  id: string
+import type { ContentItem } from '../types'
+
+type Category = '数字' | '自然' | '动物' | '身体' | '常用字'
+export interface HanziItem extends ContentItem {
   /** 主题分组：数字 / 自然 / 动物 / 身体 / 常用字 */
-  category: string
-  emoji: string
+  category: Category
   /** 汉字 */
   hanzi: string
   /** 拼音 */

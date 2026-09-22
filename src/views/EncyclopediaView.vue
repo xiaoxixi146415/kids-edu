@@ -4,12 +4,13 @@ import { encyclopedia, type EncyclopediaItem } from '../data/encyclopedia'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { buildPickQuiz } from '../composables/useChallenge'
-import type { LearnFilter } from '../components/ModuleLearnBar.vue'
+import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import ChallengeLauncher from '../components/ChallengeLauncher.vue'
+import { applyFilter, groupBy } from '../utils'
 
 const MODULE = 'encyclopedia'
 const { speak, stop } = useSpeech()
@@ -24,15 +25,7 @@ const progress = computed(() => ({ learned: learnedCount(MODULE), total: encyclo
 
 /** 按 category 分组，并应用筛选 */
 const categories = computed(() => {
-  const map = new Map<string, EncyclopediaItem[]>()
-  for (const item of encyclopedia) {
-    if (filter.value === 'todo' && isLearned(MODULE, item.id)) continue
-    if (filter.value === 'done' && !isLearned(MODULE, item.id)) continue
-    const list = map.get(item.category) ?? []
-    list.push(item)
-    map.set(item.category, list)
-  }
-  return Array.from(map.entries()).filter(([, list]) => list.length > 0)
+  return groupBy(applyFilter(encyclopedia, filter.value, MODULE, isLearned), 'category')
 })
 
 const emptyText = computed(() => {

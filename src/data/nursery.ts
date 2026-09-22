@@ -1,3 +1,5 @@
+import type { ContentItem } from '../types'
+
 export interface RhymeLine {
   /** 本句剧场大字 emoji */
   emoji: string
@@ -5,11 +7,10 @@ export interface RhymeLine {
   text: string
 }
 
-export interface NurseryRhyme {
-  id: string
+type Category = '动物' | '自然' | '生活' | '游戏'
+export interface NurseryRhyme extends ContentItem {
   /** 分组：动物 / 自然 / 生活 / 游戏 */
-  category: string
-  emoji: string
+  category: Category
   title: string
   lines: RhymeLine[]
   /** 唱完后家长引导提问（大班认知：联系生活/原因/道理），点读可朗读 */

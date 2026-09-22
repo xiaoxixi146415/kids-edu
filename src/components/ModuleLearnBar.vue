@@ -1,8 +1,3 @@
-<script lang="ts">
-/** 列表筛选：全部 / 没学过 / 学过 */
-export type LearnFilter = 'all' | 'todo' | 'done'
-</script>
-
 <script setup lang="ts">
 /**
  * 栏目学情工具条：已学进度条 + 完成度 + 「全部 / 没学过 / 学过」筛选。
@@ -10,6 +5,7 @@ export type LearnFilter = 'all' | 'todo' | 'done'
  * - 全部学完时显示祝贺语
  */
 import { computed } from 'vue'
+import type { LearnFilter } from '../types'
 
 const props = withDefaults(
   defineProps<{

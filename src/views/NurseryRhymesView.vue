@@ -3,11 +3,12 @@ import { computed, onUnmounted, ref } from 'vue'
 import { nurseryRhymes, type NurseryRhyme } from '../data/nursery'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
-import type { LearnFilter } from '../components/ModuleLearnBar.vue'
+import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AppIcon from '../components/AppIcon.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
+import { groupBy, applyFilter } from '../utils'
 
 const MODULE = 'nursery'
 const { speak, speakLines, stop, muted, supported } = useSpeech()
@@ -24,15 +25,7 @@ const progress = computed(() => ({ learned: learnedCount(MODULE), total: nursery
 
 /** 按 category 分组 + 应用筛选 */
 const groups = computed(() => {
-  const map = new Map<string, NurseryRhyme[]>()
-  for (const r of nurseryRhymes) {
-    if (filter.value === 'todo' && isLearned(MODULE, r.id)) continue
-    if (filter.value === 'done' && !isLearned(MODULE, r.id)) continue
-    const list = map.get(r.category) ?? []
-    list.push(r)
-    map.set(r.category, list)
-  }
-  return Array.from(map.entries()).filter(([, list]) => list.length > 0)
+  return groupBy(applyFilter(nurseryRhymes, filter.value, MODULE, isLearned), 'category')
 })
 
 const emptyText = computed(() => {

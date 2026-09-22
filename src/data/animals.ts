@@ -1,8 +1,10 @@
-export interface AnimalItem {
-  id: string
+import type { ContentItem } from '../types'
+
+type Category = '陆地' | '海洋' | '天空' | '极地'
+
+export interface AnimalItem extends ContentItem {
   /** 分组：陆地 / 海洋 / 天空 / 极地 */
-  category: string
-  emoji: string
+  category: Category
   name: string
   /** 叫声/特色声音拟声词 */
   sound: string

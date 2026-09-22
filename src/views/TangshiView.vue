@@ -4,12 +4,13 @@ import { tangshi, type Tangshi } from '../data/tangshi'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { buildCoupletQuiz, type CoupletUnit } from '../composables/useChallenge'
-import type { LearnFilter } from '../components/ModuleLearnBar.vue'
+import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AppIcon from '../components/AppIcon.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import ChallengeLauncher from '../components/ChallengeLauncher.vue'
+import { applyFilter } from '../utils'
 
 const MODULE = 'tangshi'
 const { speak, stop } = useSpeech()
@@ -22,11 +23,7 @@ const progress = computed(() => ({ learned: learnedCount(MODULE), total: tangshi
 
 /** 应用筛选后的列表 */
 const items = computed(() =>
-  tangshi.filter((t) => {
-    if (filter.value === 'todo' && isLearned(MODULE, t.id)) return false
-    if (filter.value === 'done' && !isLearned(MODULE, t.id)) return false
-    return true
-  })
+  applyFilter(tangshi, filter.value, MODULE, isLearned)
 )
 
 const emptyText = computed(() => {

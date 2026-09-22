@@ -3,12 +3,13 @@ import { computed, onUnmounted, ref } from 'vue'
 import { brainteasers, type BrainTeaser } from '../data/brainteasers'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
-import type { LearnFilter } from '../components/ModuleLearnBar.vue'
+import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import AppIcon from '../components/AppIcon.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
+import { applyFilter } from '../utils'
 
 const MODULE = 'brainteasers'
 const { speak, stop } = useSpeech()
@@ -21,11 +22,7 @@ const progress = computed(() => ({ learned: learnedCount(MODULE), total: brainte
 
 /** 应用筛选后的列表 */
 const items = computed(() =>
-  brainteasers.filter((t) => {
-    if (filter.value === 'todo' && isLearned(MODULE, t.id)) return false
-    if (filter.value === 'done' && !isLearned(MODULE, t.id)) return false
-    return true
-  })
+  applyFilter(brainteasers, filter.value, MODULE, isLearned)
 )
 
 const emptyText = computed(() => {

@@ -1,3 +1,4 @@
+import type { ContentItem } from '../types'
 /**
  * 安静书 · 电子版互动内容
  *
@@ -39,9 +40,7 @@ export interface QbRound {
   answer: number[]
 }
 
-export interface QbPage {
-  id: string
-  emoji: string
+export interface QbPage extends ContentItem {
   title: string
   /** 翻到这页时念的引导语 */
   intro: string

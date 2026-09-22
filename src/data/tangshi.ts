@@ -1,9 +1,8 @@
-export interface Tangshi {
-  id: string
+import type { ContentItem } from '../types'
+export interface Tangshi extends ContentItem {
   title: string
   author: string
   dynasty: string
-  emoji: string
   /** 诗句，按行排列 */
   lines: string[]
   /** 白话译文，供幼儿理解 */

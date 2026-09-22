@@ -1,10 +1,9 @@
-export interface MathNumber {
-  id: string
+import type { ContentItem } from '../types'
+
+export interface MathNumber extends ContentItem {
   num: number
   chinese: string
   pinyin: string
-  /** 数量展示用 emoji（num 个重复排列） */
-  emoji: string
   /** 幼儿向一句话讲解 */
   text: string
 }

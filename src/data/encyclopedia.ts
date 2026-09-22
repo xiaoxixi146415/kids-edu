@@ -1,7 +1,8 @@
-export interface EncyclopediaItem {
-  id: string
-  category: string
-  emoji: string
+import type { ContentItem } from '../types'
+
+type Category = '动物' | '自然' | '生活常识'
+export interface EncyclopediaItem extends ContentItem {
+  category: Category
   title: string
   /** 科普内容，点开详情时朗读 */
   text: string

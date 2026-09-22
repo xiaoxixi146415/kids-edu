@@ -3,11 +3,12 @@ import { computed, onUnmounted, ref } from 'vue'
 import { pinyin, type PinyinItem } from '../data/pinyin'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
-import type { LearnFilter } from '../components/ModuleLearnBar.vue'
+import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
+import { applyFilter, groupBy } from '../utils'
 
 const MODULE = 'pinyin'
 const { speak, stop } = useSpeech()
@@ -19,15 +20,7 @@ const progress = computed(() => ({ learned: learnedCount(MODULE), total: pinyin.
 
 /** 按 group 分组，并应用筛选 */
 const categories = computed(() => {
-  const map = new Map<string, PinyinItem[]>()
-  for (const item of pinyin) {
-    if (filter.value === 'todo' && isLearned(MODULE, item.id)) continue
-    if (filter.value === 'done' && !isLearned(MODULE, item.id)) continue
-    const list = map.get(item.group) ?? []
-    list.push(item)
-    map.set(item.group, list)
-  }
-  return Array.from(map.entries()).filter(([, list]) => list.length > 0)
+  return groupBy(applyFilter(pinyin, filter.value, MODULE, isLearned), 'group')
 })
 
 const emptyText = computed(() => {

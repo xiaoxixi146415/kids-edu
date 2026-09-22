@@ -1,6 +1,6 @@
-export interface BrainTeaser {
-  id: string
-  emoji: string
+import type { ContentItem } from '../types'
+
+export interface BrainTeaser extends ContentItem {
   question: string
   answer: string
 }

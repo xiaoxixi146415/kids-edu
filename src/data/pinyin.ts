@@ -1,7 +1,9 @@
-export interface PinyinItem {
-  id: string
+import type { ContentItem } from '../types'
+
+type Group = '声母' | '韵母' | '整体认读'
+export interface PinyinItem extends ContentItem {
   /** 分组：声母 / 韵母 / 整体认读音节 */
-  group: string
+  group: Group
   /** 拼音字母/音节（用于展示） */
   pinyin: string
   /**
@@ -12,7 +14,6 @@ export interface PinyinItem {
   sound: string
   /** 例词（含该音的幼儿常用词） */
   example: string
-  emoji: string
   /** 幼儿向一句话讲解（避免出现拉丁字母，保证朗读正确） */
   text: string
 }
