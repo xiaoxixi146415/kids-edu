@@ -124,10 +124,36 @@
 - **何时才是必需品**：阶段 2 从数据推导 Prisma schema（W4）、阶段 3 用 JSON Schema 约束 LLM 结构化输出——那才是 `as const satisfies` 的主场。
 - 记这一条的目的：验收标准考的是「能解释每个类型表达的业务规则」，**想过而不加 ≠ 没想过**；且风险表 #2 明确警告「阶段 1 沉迷类型体操 → 超过 3 周硬停」。
 
-- [ ] 待收尾：`src/utils/filter.ts` 风格清理未完成——仍有 **5 处分号**（第 1/10/22/24/25 行）+ **2 处双引号**（第 24/25 行的 `"todo"` / `"done"`）。项目风格为无分号 + 单引号。其余 4 个新增文件（`types/content.ts`、`types/filter.ts`、`types/index.ts`、`utils/index.ts`）已复核干净。
+- [x] ~~待收尾：`src/utils/filter.ts` 风格清理未完成——仍有 5 处分号 + 2 处双引号~~ **订正（会话 13 复核）**：提交前实际只剩 **1 处分号**（第 10 行 `list.push(item);`），5 处/2 处这个数字是清理前的快照，没随代码一起更新。最后 1 处已在会话 13 补掉（改在 `src/utils/filter.ts:10`，**当前仍是未提交状态**）。
 - 备注：项目**无 ESLint / Prettier / EditorConfig**，代码风格无自动守卫、全靠手工一致；新增文件越多越易漂移。阶段 2 前值得补一个格式化配置（仅记录，不在本阶段做）。
 
+## 会话 13（2026-09-22）— 阶段 1 任务 B：`node-test/06-database` strict TS 重写
+
+> 对应 `CAREER_PLAN.md` 阶段 1 任务 B。**本次改动全在 `node-test/`，kids-edu 源码只动了一个分号**。
+> 详细记录（含每条坑的实测证据）见 `node-test/06-database-ts/README.md`。
+
+- [x] 取「平行目录」方案：JS 版**原样留在** `06-database/`，TS 版新建 `06-database-ts/`，`tsc` 编译到 `dist/`，端口错开为 **3006**（两版可同时跑对照）。`node-test` 不是 git 仓库，平行目录同时充当了还原点。
+- [x] 工具链 `npm i -D typescript @types/node @types/express @types/jsonwebtoken`，装到的是 **typescript 7.0.2**（原生版编译器）。bcryptjs 3.x 自带 `index.d.ts`，**不装** `@types/bcryptjs`（那是个已废弃的 stub）。
+- [x] 17 个文件 / 1159 行：`types/`(domain+http+express.d.ts) + `middleware/`(error/logger/requireJwt/validate) + `models/`(User/Task) + `store/`(users/tasks) + `routes/`(auth/tasks) + `env/config/db/server`。
+- [x] strict 全开之外再加 `noUncheckedIndexedAccess` / `noImplicitOverride` / `noFallthroughCasesInSwitch` / `noUnusedLocals` / `noUnusedParameters`；`any` **0 处**（仅 2 处出现在注释里，用于解释为什么不写 any）。
+- [x] 三处**有意**的结构改动（README 逐条写了理由）：body 校验从中间件改成纯函数（窄化发生在使用点，而不是靠「顺序保证」的声明）；改删 store 收**文档**而非 id（消掉返回类型里那个逻辑上不可能的 `null`，顺带少一次查库）；响应统一走 `ok()/okMessage()/fail()`（`res.json()` 参数是 `any`，直接写对象字面量拼错字段名编译器不吭声）。
+- [x] 新增 scripts：`db:ts` / `db:ts:check` / `db:ts:clean`。
+- [x] 顺带修掉会话 12 遗留的最后 1 处分号（`src/utils/filter.ts:10`）。
+
+**踩到的坑（全部用 tsc 探针实测，不是推测）：**
+- **`__dirname` 变了**：`tsc → dist` 后它指向 `dist/`，JS 版那句 `path.join(__dirname, '.env')` 在编译产物里**必然读不到 `.env`，而且失败是静默的**（dotenv 照常打提示、服务照跑，只是连了默认库、签了默认密钥）→ 用 `../.env`；`public/` 同理。**运行时路径要按产物位置算，不是按源码位置算。**
+- **dotenv 的执行时机**：在 `server.ts` 里写一行 `dotenv.config()` 能生效，靠的是 **CJS 的 require 按语句位置顺序执行**；哪天改成 ESM，import 全部提升，`./config` 会先于它求值、`process.env` 全空——而这是运行时错误，编译器不拦 → 抽成 `src/env.ts` 放第一条 import，靠「import 之间相对顺序被保留」这条 ESM/CJS 都成立的规则。
+- **错误中间件少写第 4 个参数，TypeScript 不报错**（函数可以少收参数）。但 Express 靠 `fn.length === 4` 识别错误中间件，于是它**静默降级成普通中间件、所有错误变成 404** → 第 4 个参数用 `_next` 命名，既过 `noUnusedParameters` 又保住 arity=4。
+- **`jwt.verify` 返回 `string | JwtPayload`**，而 `JwtPayload` 是 `{ [key: string]: any }`——只保证「是个对象」，不保证有 `userId`；token 还是**客户端造的** → 逐字段窄化。`decoded as {userId: string}` 会让 `findById(123)` 在类型系统全程沉默的情况下发生。
+- **Mongoose 的 `find()` 对未知键是宽容的**：`TaskModel.find({ titel: 'x' })` **编译通过**，只会变成一个永远匹配不上的静默筛选；换成 `find({ done: 'not-a-boolean' })` 才报 TS2769 → 所以 `const query: TaskFilter = {}` 这种「具名类型站在中间」的写法是真有防御价值，不是装饰。
+- **`InferSchemaType` 能把 `timestamps` 推出来**（报错信息里可见 `createdAt: NativeDate`），不需要手写 interface 也不需要 `Schema<Doc>` 手写泛型——省下一处「两个事实来源」。
+- 全项目共 **4 处 `as`，全部落在系统边界**（env 字符串 / 泛型 req / unknown error / unknown body），**业务逻辑中间 0 处**。
+
 ## 测试结果
+- 会话 13（`node-test/06-database-ts`）：`tsc -p 06-database-ts --noEmit` **零错误**，17 个文件全部参与检查（用 `--listFiles` 核实，不是「一个文件都没匹配所以静默通过」）；干净重建 `dist/` 通过（16 个 js）。
+- 会话 13 **JS ↔ TS 行为对照（最强的一项）**：两版**各连独立测试库**（`node-test-parity-{js,ts}`，跑完已 drop），喂完全相同的 **27 步**请求序列——登录/建改删全流程、无 token 401、伪 token 401、归属 403、`done=1` 400、非法 ObjectId 400、非法 JSON 400、重名 409、密码过短 400、查不存在的 id 404——**27/27 状态码与响应体完全一致，0 条差异**（id/token/时间戳已掩码）。
+- 会话 13 **阳性对照（关键）**：用一个临时探针文件确认 tsc **真的会报错**，而不是静默放行——`req.user.id` 未登录 → TS18048；信封拼错 `sucess` → TS2561；`query.titel` → TS2339；`PublicTask` 漏 `updatedAt` → TS2741。
+- 会话 13 阳性对照**反推翻了 2 条我原本写进注释的断言**（`find({titel})` 不报错、错误中间件少参数不报错），两条注释已按实测改写。**「编译器没报错」和「代码是对的」是两回事，只有阳性对照能区分。**
 - 会话 12：`npm run build`（vue-tsc -b && vite build）通过，901ms；PWA precache 32 条目。新增共享 chunk `filter-*.js` 1.77KB（gzip 1.01）——7 个视图复用同一份 `groupBy`/`applyFilter`，抽象落成了真实的共享产物。
 - 会话 12 逐页实测（headless Chrome + CDP）：**7 页全绿** —— animals / pinyin / encyclopedia / hanzi / nursery / tangshi / brainteasers，均为「路由渲染 ✓ + Service Worker 已注册 ✓ + 控制台零错误 ✓」。
 - 会话 11：`npm run build`（vue-tsc -b && vite build）通过，1.90s；PWA precache 32 条目；vite preview 冒烟 200。
@@ -171,3 +197,5 @@
 | 分组视图筛选后整页空白 | `groupBy` 返回 `Map` | 模板用 `v-if="x.length"`，而 `Map` 只有 `.size` 没有 `.length`（实测 `Map.length === undefined`）。**`vue-tsc` 不报、首页冒烟也不报**——只有真跑那个筛选才现形。改为返回 `[T[K], T[]][]` |
 | `preview-check` 连续 3 次失败（Chrome 崩溃 dump / CDP 非 101 / vite preview 未就绪） | 原样重试 3 次 | **非页面缺陷**：脚本收尾的 `chrome.kill()` 在 Windows 只杀父进程，Chrome 子进程树（renderer/gpu/crashpad）全部残留，累积 **55 个僵尸 Chrome** 耗尽资源。清理后一次通过。**待修**：改用 `taskkill /pid <pid> /T /F` 杀整棵进程树 |
 | 同一处重复逻辑漏数 | grep 关键词 | 报"4 个视图"，实际 **5 个** —— 第 5 个（NurseryRhymesView）变量名叫 `groups`/`r` 而非 `categories`/`item`，机械搜索漏掉了。**命名不一致会藏住重复** |
+| 把没验过的断言写进了代码注释 | 用临时 tsc 探针文件逐条复验 | 6 条探针里 **2 条被推翻**：`TaskModel.find({titel})` 其实**不报错**（Mongoose 对未知键宽容）、错误中间件少第 4 个参数其实**不报错**。两条注释已按实测改写。**注释里的假话比没有注释更糟** |
+| tsc 首次全绿，怀疑它压根没在干活 | `--listFiles` 核实 17 个文件参与检查 + 注入错误做阳性对照 | 编译器确实在工作、代码确实零错误。**"没报错"必须先证明"它会报错"才有意义**，否则分不清「没问题」和「没检查」 |
