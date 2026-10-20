@@ -109,6 +109,8 @@ npm run dev        # 本地预览：http://localhost:5173
 npm run build      # 产物输出到 dist/
 npm run preview    # 本地预览生产包
 npm run gen-icons  # 重新生成 PWA 图标（改过 favicon.svg 后运行）
+npm run check:counts        # 校验首页各栏目 total 与 src/data 实际条数一致
+npm run check:interactions  # headless Chrome 真实点击验证交互（需先 npm run build）
 ```
 
 > 语音依赖浏览器自带中文语音：电脑 Chrome/Edge 一般自带微软中文音色；手机系统浏览器/微信内置浏览器通常也支持。若听不到声音，先点首页「点我开始」解锁，并检查是否静音了（右上角喇叭图标）。

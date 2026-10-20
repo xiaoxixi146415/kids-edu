@@ -8,7 +8,8 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "gen-icons": "node scripts/gen-icons.mjs",
-    "check:counts": "node scripts/check-counts.mjs"
+    "check:counts": "node scripts/check-counts.mjs",
+    "check:interactions": "node scripts/interaction-check.mjs"
   },
   "dependencies": {
     "vue": "^3.5.13",

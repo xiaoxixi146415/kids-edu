@@ -260,7 +260,8 @@ function tap(i: number) {
 
 function optClass(i: number): string {
   const r = round.value
-  if (r.goal === 'pick-one') {
+  // 单选族：pick-one / 影子配对 / 谁不见了 —— 三者都由 correctNow 驱动高亮
+  if (r.goal === 'pick-one' || r.goal === 'shadow' || r.goal === 'whats-missing') {
     if (wrong.value === i && correctNow.value === -1) return 'qb-wrong'
     if (correctNow.value !== -1) return i === r.answer[0] ? 'qb-correct' : 'qb-dim'
     return ''
