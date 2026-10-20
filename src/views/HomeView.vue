@@ -12,14 +12,14 @@ const { stars, streak, todayCount, dailyGoal, todayDone, learnedCount } = usePro
 
 /** 首页入口卡：module 供学情统计用，total 为各栏目数据量 */
 const CATEGORIES = [
-  { path: '/encyclopedia', module: 'encyclopedia', total: 36, emoji: '📖', title: '知识百科', subtitle: '认识世界', tone: 'tone-orange' },
-  { path: '/brainteasers', module: 'brainteasers', total: 32, emoji: '🤔', title: '脑筋急转弯', subtitle: '动动小脑瓜', tone: 'tone-purple' },
+  { path: '/encyclopedia', module: 'encyclopedia', total: 40, emoji: '📖', title: '知识百科', subtitle: '认识世界', tone: 'tone-orange' },
+  { path: '/brainteasers', module: 'brainteasers', total: 36, emoji: '🤔', title: '脑筋急转弯', subtitle: '动动小脑瓜', tone: 'tone-purple' },
   { path: '/tangshi', module: 'tangshi', total: 24, emoji: '📜', title: '唐诗', subtitle: '跟着念古诗', tone: 'tone-green' },
-  { path: '/hanzi', module: 'hanzi', total: 36, emoji: '✏️', title: '识字认字', subtitle: '认一认汉字', tone: 'tone-blue' },
+  { path: '/hanzi', module: 'hanzi', total: 40, emoji: '✏️', title: '识字认字', subtitle: '认一认汉字', tone: 'tone-blue' },
   { path: '/math', module: 'math', total: 10, emoji: '🔢', title: '数学启蒙', subtitle: '数一数算一算', tone: 'tone-red' },
-  { path: '/animals', module: 'animals', total: 36, emoji: '🦁', title: '动物乐园', subtitle: '听听动物朋友', tone: 'tone-teal' },
+  { path: '/animals', module: 'animals', total: 40, emoji: '🦁', title: '动物乐园', subtitle: '听听动物朋友', tone: 'tone-teal' },
   { path: '/quietbook', module: 'quietbook', total: 9, emoji: '🧸', title: '安静书', subtitle: '点一点 动手玩', tone: 'tone-fuchsia' },
-  { path: '/stories', module: 'stories', total: 7, emoji: '📚', title: '绘本故事', subtitle: '翻翻听故事', tone: 'tone-amber' },
+  { path: '/stories', module: 'stories', total: 8, emoji: '📚', title: '绘本故事', subtitle: '翻翻听故事', tone: 'tone-amber' },
   { path: '/pinyin', module: 'pinyin', total: 63, emoji: '🔤', title: '拼音乐园', subtitle: '认声母学韵母', tone: 'tone-pink' },
   { path: '/nursery', module: 'nursery', total: 9, emoji: '🎵', title: '儿童歌谣', subtitle: '听童谣 唱一唱', tone: 'tone-lime' },
 ] as const
