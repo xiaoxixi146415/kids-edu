@@ -197,6 +197,16 @@
 - [x] **发现并修复一个真实 UI 缺陷**：`QuietBookView.optClass()` 只对 `pick-one` 返回 `qb-correct`，而 `shadow` / `whats-missing` 虽走单选逻辑却永远不高亮正确答案（有反馈文案、没有绿色视觉）。已把三者合并为同一单选族判断。
 - [x] README 本地开发新增 `check:counts` / `check:interactions` 两条命令。
 
+## 会话 15 补充三（2026-10-20）— 补齐剩余交互 / 离线 / 语音路径
+
+- [x] `check:interactions` 从 10 项扩到 **14 项**：
+  - 安静书「颜色点点」：色块渲染（5 个 `.qb-dot`）/ 点错复位 / 5 回合全部完成并写入 `quietbook:colors`
+  - 安静书「找不同」：逐回合从上排 `reference` 与下排选项做 **DOM 文本比对**，自动找出 2 处差异 → 全部收入 + 3 回合完成并写入 `quietbook:spot`
+  - 语音：拦截 `speechSynthesis.speak` 计数，打开百科「太阳」长文本，确认按句拆成 **≥2 个 utterance** 接力（`onend` 链真的在跑）
+  - PWA：等 Service Worker 接管后，用 CDP `Network.emulateNetworkConditions` 断网 + `ignoreCache` 冷启动，首页 10 卡仍渲染；再点「拼音乐园」，懒加载 chunk 也从预缓存加载（离线可用）
+- [x] 本轮**未发现新的应用缺陷**（上一轮的 `qb-correct` 高亮问题是唯一一个）。
+- [x] 离线窗口单独计数网络错误，不与在线控制台错误混在一起；本次离线窗口错误为 0。
+
 ## 测试结果
 - 会话 13（`node-test/06-database-ts`）：`tsc -p 06-database-ts --noEmit` **零错误**，17 个文件全部参与检查（用 `--listFiles` 核实，不是「一个文件都没匹配所以静默通过」）；干净重建 `dist/` 通过（16 个 js）。
 - 会话 13 **JS ↔ TS 行为对照（最强的一项）**：两版**各连独立测试库**（`node-test-parity-{js,ts}`，跑完已 drop），喂完全相同的 **27 步**请求序列——登录/建改删全流程、无 token 401、伪 token 401、归属 403、`done=1` 400、非法 ObjectId 400、非法 JSON 400、重名 409、密码过短 400、查不存在的 id 404——**27/27 状态码与响应体完全一致，0 条差异**（id/token/时间戳已掩码）。

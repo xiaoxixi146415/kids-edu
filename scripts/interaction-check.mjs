@@ -184,6 +184,16 @@ async function main() {
       evaluate(`document.querySelector(${JSON.stringify(selector)})?.textContent?.trim() ?? ''`)
     const countOf = (selector) =>
       evaluate(`document.querySelectorAll(${JSON.stringify(selector)}).length`)
+    const waitAskChange = async (oldAsk, timeout = 6000) => {
+      await waitFor(
+        `(() => {
+          const el = document.querySelector('.qb-ask')
+          return el && el.textContent.trim() !== ${JSON.stringify(oldAsk)}
+        })()`,
+        timeout,
+        '进入下一回合'
+      )
+    }
 
     const results = []
     const step = async (name, fn) => {
@@ -286,6 +296,79 @@ async function main() {
         }
       }
       if (!found) throw new Error('影子配对答对后没有绿色高亮')
+    })
+
+    await step('安静书：颜色点点 → 点错复位 → 5 回合完成', async () => {
+      await clickText('.qb-chip', '颜色点点')
+      await waitFor(
+        `document.querySelector('.qb-pagetitle')?.textContent.includes('颜色点点')`,
+        5000,
+        '切换到颜色页'
+      )
+      await waitFor(`document.querySelector('.qb-opt')`, 5000, '颜色页选项')
+      if ((await countOf('.qb-opt .qb-dot')) !== 5) throw new Error('颜色小球没有渲染成色块')
+
+      // 先点错：第 2 个是黄色，题目问红色
+      await clickAt('.qb-opt', 1)
+      await waitFor(`document.querySelector('.qb-opt.qb-wrong')`, 2000, '点错样式')
+      await sleep(700)
+      if (await evaluate(`!!document.querySelector('.qb-opt.qb-wrong')`)) {
+        throw new Error('点错样式未复位')
+      }
+
+      let ask = await textOf('.qb-ask')
+      await clickAt('.qb-opt', 0) // 每回合正确答案都在 0
+      for (let r = 1; r < 5; r++) {
+        await waitAskChange(ask)
+        if (await evaluate(`!!document.querySelector('.qb-done')`)) {
+          throw new Error(`第 ${r} 回合就提前完成了`)
+        }
+        ask = await textOf('.qb-ask')
+        await waitFor(
+          `[...document.querySelectorAll('.qb-opt')].every((el) => !el.disabled)`,
+          5000,
+          `第 ${r + 1} 回合可作答`
+        )
+        await clickAt('.qb-opt', 0)
+      }
+      await waitFor(`document.querySelector('.qb-done')`, 6000, '颜色页完成屏')
+      const doneText = await textOf('.qb-done-title')
+      if (!doneText.includes('第 二 页完成啦')) throw new Error(`完成文案异常: ${doneText}`)
+      const prog = await evaluate(`JSON.parse(localStorage.getItem('kids-edu-progress') || '{}')`)
+      if (!(prog.learned ?? []).includes('quietbook:colors')) throw new Error('未写入 quietbook:colors')
+    })
+
+    await step('安静书：找不同 → 对照上排找出全部差异 → 3 回合完成', async () => {
+      await clickText('.qb-chip', '找不同')
+      await waitFor(
+        `document.querySelector('.qb-pagetitle')?.textContent.includes('找不同')`,
+        5000,
+        '切换到找不同页'
+      )
+      for (let round = 0; round < 3; round++) {
+        await waitFor(`document.querySelector('.qb-ref')`, 5000, '对照栏')
+        await waitFor(`document.querySelector('.qb-opt')`, 5000, '找不同选项')
+        const diffs = await evaluate(`(() => {
+          const refs = [...document.querySelectorAll('.qb-ref .qb-ref-cell')].map((e) => e.textContent.trim())
+          const opts = [...document.querySelectorAll('.qb-opt')].map((e) => e.textContent.trim())
+          return opts.map((t, i) => (t !== refs[i] ? i : -1)).filter((i) => i >= 0)
+        })()`)
+        if (diffs.length !== 2) throw new Error(`第 ${round + 1} 回合差异数异常: ${diffs.length}`)
+        for (const i of diffs) {
+          await clickAt('.qb-opt', i)
+          await sleep(220)
+        }
+        if ((await countOf('.qb-opt.qb-picked')) !== 2) throw new Error('差异项没有全部收下')
+        if (round < 2) {
+          const ask = await textOf('.qb-ask')
+          await waitAskChange(ask)
+        }
+      }
+      await waitFor(`document.querySelector('.qb-done')`, 6000, '找不同完成屏')
+      const doneText = await textOf('.qb-done-title')
+      if (!doneText.includes('第 七 页完成啦')) throw new Error(`完成文案异常: ${doneText}`)
+      const prog = await evaluate(`JSON.parse(localStorage.getItem('kids-edu-progress') || '{}')`)
+      if (!(prog.learned ?? []).includes('quietbook:spot')) throw new Error('未写入 quietbook:spot')
     })
 
     /* ================= 2. 今日小挑战 ================= */
@@ -463,13 +546,85 @@ async function main() {
       await waitFor(`!document.querySelector('.rhyme-view')`, 3000, '关闭歌谣弹层')
     })
 
+    /* ================= 5. 长文本语音接力 ================= */
+    await step('语音：长文本按句拆成多个 utterance 接力', async () => {
+      await go('encyclopedia')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '百科卡片')
+      await evaluate(`(() => {
+        window.__speakCalls = 0
+        const synth = window.speechSynthesis
+        if (!synth.__patched) {
+          const orig = synth.speak.bind(synth)
+          synth.speak = (u) => { window.__speakCalls++; return orig(u) }
+          synth.__patched = true
+        }
+        return true
+      })()`)
+      await clickText('.big-card', '太阳')
+      await waitFor(`document.querySelector('.detail-text')`, 5000, '百科详情')
+      await waitFor(`window.__speakCalls >= 2`, 10000, '第二个 utterance')
+      const calls = await evaluate('window.__speakCalls')
+      if (calls < 2) throw new Error(`只触发了 ${calls} 个 utterance`)
+      await clickAt('.detail-card .close-btn', 0)
+      await waitFor(`!document.querySelector('.detail-text')`, 3000, '关闭详情')
+    })
+
+    /* ================= 6. PWA 离线 ================= */
+    let offlineErrorCount = 0
+    await step('PWA：离线冷启动 + 离线懒加载栏目', async () => {
+      await go('')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '首页')
+      if (!(await evaluate('!!navigator.serviceWorker.controller'))) {
+        await send('Page.reload')
+        await waitFor(`document.querySelector('.big-card')`, 12000, '刷新后首页')
+        await sleep(1000)
+      }
+      if (!(await evaluate('!!navigator.serviceWorker.controller'))) {
+        throw new Error('Service Worker 未接管页面')
+      }
+
+      await send('Network.enable')
+      await send('Network.emulateNetworkConditions', {
+        offline: true,
+        latency: 0,
+        downloadThroughput: 0,
+        uploadThroughput: 0,
+      })
+      const errStart = consoleErrors.length
+      try {
+        await send('Page.reload', { ignoreCache: true })
+        await waitFor(
+          `document.querySelectorAll('.big-card').length >= 10`,
+          15000,
+          '离线首页渲染'
+        )
+        // 点进拼音：验证懒加载 chunk 也从 SW 预缓存取到
+        await clickText('.big-card', '拼音乐园')
+        await waitFor(`document.body.innerText.includes('声母')`, 12000, '离线拼音栏目')
+      } finally {
+        offlineErrorCount = consoleErrors.length - errStart
+        await send('Network.emulateNetworkConditions', {
+          offline: false,
+          latency: 0,
+          downloadThroughput: -1,
+          uploadThroughput: -1,
+        })
+        await sleep(500)
+      }
+    })
+
     /* ================= 汇总 ================= */
     ws.close()
     console.log('\n--- 汇总 ---')
     const failed = results.filter((r) => !r.ok)
+    const onlineErrors = consoleErrors.slice(0, consoleErrors.length - offlineErrorCount)
     console.log(`通过 ${results.length - failed.length}/${results.length} 项`)
-    console.log(`控制台错误: ${consoleErrors.length === 0 ? '无' : consoleErrors.join(' | ')}`)
-    const ok = failed.length === 0 && consoleErrors.length === 0
+    console.log(
+      `控制台错误: ${onlineErrors.length === 0 ? '无' : onlineErrors.join(' | ')}${
+        offlineErrorCount > 0 ? `（离线窗口另有 ${offlineErrorCount} 条网络错误，已忽略）` : ''
+      }`
+    )
+    const ok = failed.length === 0 && onlineErrors.length === 0
     process.exitCode = ok ? 0 : 1
   } finally {
     killTree(chrome)
