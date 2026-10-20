@@ -9,7 +9,7 @@
 //   node scripts/preview-check.mjs pinyin "声母"       # 指定路由(不带 #/)+ 页面必须包含的文案
 //
 // 全部通过 → 退出码 0 并逐项打印 ✓;任一失败 → 非 0 退出码并打印 ✗。
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -32,6 +32,23 @@ const BASE = `http://${HOST}:${PREVIEW_PORT}/${TARGET_URL}`
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+/**
+ * 终止整棵进程树。
+ * Windows 上 child.kill() 只杀父进程，Chrome 的 renderer/gpu/crashpad 子进程会残留；
+ * 累积几十个僵尸进程后会表现为随机失败（CDP 非 101、vite preview 未就绪等），
+ * 且残留进程占着临时 profile 的句柄，导致 rmSync 失败、TEMP 下堆目录。
+ */
+function killTree(child) {
+  if (!child?.pid) return
+  if (process.platform === 'win32') {
+    try {
+      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
+    } catch {}
+  } else {
+    child.kill()
+  }
+}
+
 function findChrome() {
   const candidates = [
     process.env.CHROME,
@@ -45,8 +62,7 @@ function findChrome() {
 
 async function main() {
   const fail = (msg) => {
-    console.error(`✗ ${msg}`)
-    process.exit(1)
+    throw new Error(msg)
   }
 
   if (!existsSync(path.join(ROOT, 'dist', 'index.html'))) {
@@ -68,7 +84,7 @@ async function main() {
     } catch {}
   }
   if (!previewOk) {
-    preview.kill()
+    killTree(preview)
     fail('vite preview 未就绪')
   }
 
@@ -166,10 +182,10 @@ async function main() {
     ws.close()
     process.exitCode = ok ? 0 : 1
   } finally {
-    chrome.kill()
-    preview.kill()
+    killTree(chrome)
+    killTree(preview)
     try { rmSync(profile, { recursive: true, force: true }) } catch {}
   }
 }
 
-main().catch((e) => { console.error('FATAL', e.message); process.exit(1) })
+main().catch((e) => { console.error(`✗ ${e.message}`); process.exit(1) })

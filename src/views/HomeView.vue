@@ -10,7 +10,12 @@ const router = useRouter()
 const { speak, unlock, unlocked, supported } = useSpeech()
 const { stars, streak, todayCount, dailyGoal, todayDone, learnedCount } = useProgress()
 
-/** 首页入口卡：module 供学情统计用，total 为各栏目数据量 */
+/**
+ * 首页入口卡：module 供学情统计用，total 为各栏目数据量。
+ * total 必须手写：这里若静态 import 各栏目数据，内容会被打进首页共享 chunk，
+ * 所有栏目都要陪着下载（懒加载边界会被打破，见 EXPLAIN_CHECKLIST Q2）。
+ * 改数据条数后记得同步这里——`npm run check:counts` 会校验两者是否一致。
+ */
 const CATEGORIES = [
   { path: '/encyclopedia', module: 'encyclopedia', total: 40, emoji: '📖', title: '知识百科', subtitle: '认识世界', tone: 'tone-orange' },
   { path: '/brainteasers', module: 'brainteasers', total: 36, emoji: '🤔', title: '脑筋急转弯', subtitle: '动动小脑瓜', tone: 'tone-purple' },

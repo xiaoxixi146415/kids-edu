@@ -175,6 +175,16 @@
 - [x] 新增 13 个 id 已复核：各文件内唯一；与既有数据文件的跨文件同 id 保持原有设计（`hua` 为避免与唐诗 `画` 撞名改为 `hua-flower`）。
 - [x] 内容事实复核：犀牛角成分类似指甲、蜂鸟可倒飞、长颈鹿喝水姿势、海星断角可再生、北极狐随季节换毛等均有据。
 
+## 会话 15 补充（2026-10-20）— 验证工具链修复 + 数量校验
+
+- [x] 修复 `scripts/preview-check.mjs` 的 Windows 进程泄漏：收尾从 `child.kill()` 改为 `taskkill /pid <pid> /T /F`（`killTree()`），连 Chrome 的 renderer/gpu/crashpad 子进程一起终止。
+- [x] 失败路径同样会清理：`fail()` 从 `process.exit(1)` 改为抛错，让 `finally` 能执行；outer catch 统一打印 `✗ <原因>`。
+- [x] 实测两项：正常通过后残留 Chrome 进程 **0**、临时 profile 目录 **0**；故意用不存在的文案触发失败后同样为 **0/0**。
+- [x] 新增 `scripts/check-counts.mjs` + `npm run check:counts`：解析 `HomeView.vue` 的 `module/total`，与 `src/data/<module>.ts` 的 `id:` 数量逐一比对；10 个栏目全部一致。
+- [x] `HomeView.vue` 增加注释说明 total 为何必须手写（静态 import 数据会打破懒加载边界），并指向 `check:counts`。
+- [x] 文案微调：识字「虫」讲解中的「蚂蚁都是虫」改为「毛毛虫、小甲虫」。
+- [x] `npm run build` 通过（86 modules，860ms）。
+
 ## 测试结果
 - 会话 13（`node-test/06-database-ts`）：`tsc -p 06-database-ts --noEmit` **零错误**，17 个文件全部参与检查（用 `--listFiles` 核实，不是「一个文件都没匹配所以静默通过」）；干净重建 `dist/` 通过（16 个 js）。
 - 会话 13 **JS ↔ TS 行为对照（最强的一项）**：两版**各连独立测试库**（`node-test-parity-{js,ts}`，跑完已 drop），喂完全相同的 **27 步**请求序列——登录/建改删全流程、无 token 401、伪 token 401、归属 403、`done=1` 400、非法 ObjectId 400、非法 JSON 400、重名 409、密码过短 400、查不存在的 id 404——**27/27 状态码与响应体完全一致，0 条差异**（id/token/时间戳已掩码）。
