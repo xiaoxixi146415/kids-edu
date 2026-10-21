@@ -563,7 +563,7 @@ onUnmounted(() => {
 .qb-progress-num {
   font-size: 17px;
   font-weight: 800;
-  color: #0369a1;
+  color: var(--color-info);
 }
 
 /* —— 书页选择条 —— */
@@ -618,8 +618,8 @@ onUnmounted(() => {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #16a34a;
-  color: #fff;
+  background: var(--color-correct);
+  color: var(--color-on-primary);
   font-size: 12px;
   font-weight: 900;
 }
@@ -645,7 +645,7 @@ onUnmounted(() => {
 .qb-pageno {
   padding: 4px 14px;
   border-radius: var(--radius-pill);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: 15px;
   font-weight: 800;
 }
@@ -655,7 +655,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.75);
   font-size: 14px;
   font-weight: 800;
-  color: #16a34a;
+  color: var(--color-correct);
 }
 .qb-head-spacer {
   flex: 1;
@@ -775,8 +775,8 @@ onUnmounted(() => {
   margin-left: auto;
   padding: 3px 12px;
   border-radius: var(--radius-pill);
-  background: #ea580c;
-  color: #fff;
+  background: var(--color-warn);
+  color: var(--color-on-primary);
   font-size: 14px;
   font-weight: 800;
 }
@@ -864,17 +864,17 @@ onUnmounted(() => {
 
 /* 回合反馈状态 */
 .qb-opt.qb-correct {
-  background: #16a34a;
-  color: #fff;
+  background: var(--color-correct);
+  color: var(--color-on-primary);
   animation: qb-bounce 0.4s var(--ease-pop);
 }
 .qb-opt.qb-picked {
-  background: #16a34a;
-  color: #fff;
+  background: var(--color-correct);
+  color: var(--color-on-primary);
   box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.6);
 }
 .qb-opt.qb-wrong {
-  background: #fff;
+  background: var(--color-surface);
   animation: qb-shake 0.4s ease;
 }
 .qb-opt.qb-wrong .qb-emoji {
@@ -882,7 +882,7 @@ onUnmounted(() => {
 }
 .qb-opt.qb-wrong .qb-opt-label,
 .qb-opt.qb-wrong .qb-num {
-  color: #dc2626;
+  color: var(--color-wrong);
 }
 .qb-opt.qb-dim {
   opacity: 0.4;
@@ -920,10 +920,10 @@ onUnmounted(() => {
   margin-top: 10px;
   font-size: 20px;
   font-weight: 800;
-  color: #dc2626;
+  color: var(--color-wrong);
 }
 .qb-feedback.ok {
-  color: #15803d;
+  color: var(--color-correct-deep);
 }
 
 /* —— 整页完成 —— */
@@ -977,7 +977,7 @@ onUnmounted(() => {
   margin-top: 6px;
   font-size: 19px;
   font-weight: 800;
-  color: #15803d;
+  color: var(--color-correct-deep);
 }
 .qb-done-actions {
   display: flex;
@@ -1077,18 +1077,18 @@ onUnmounted(() => {
   width: 100%;
   font-size: 16px;
   font-weight: 800;
-  color: #6366f1;
+  color: var(--color-accent-indigo);
 }
 .qb-survivors .qb-memory-item {
   font-size: 40px;
 }
 .qb-survivors .qb-memory-tip {
-  color: #7c3aed;
+  color: var(--color-accent-violet);
 }
 
 /* —— 影子配对：把彩色 emoji 压成黑影 —— */
 .qb-opt.qb-opt-shadow {
-  background: #f1f5f9;
+  background: var(--color-neutral-bg);
 }
 .qb-opt-shadow .qb-emoji {
   filter: brightness(0);
@@ -1098,16 +1098,16 @@ onUnmounted(() => {
   padding: 1px 10px;
   border-radius: var(--radius-pill);
   background: rgba(100, 116, 139, 0.18);
-  color: #475569;
+  color: var(--color-neutral-text);
   font-size: 13px;
   font-weight: 800;
 }
 .qb-opt.qb-opt-shadow.qb-correct {
-  background: #16a34a;
+  background: var(--color-correct);
 }
 .qb-opt.qb-opt-shadow.qb-correct .qb-shadow-tag {
   background: rgba(255, 255, 255, 0.28);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

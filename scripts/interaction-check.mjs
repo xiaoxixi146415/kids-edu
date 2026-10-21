@@ -7,6 +7,8 @@
 //   2. 今日小挑战：答题 → 纠正 → 结算 → 再玩一次全对 → 闯关成功 + 得星
 //   3. 数学练习：数一数/加减法 → 答对反馈 → 换一题 → 答错反馈
 //   4. 儿童歌谣：连唱逐句推进 / 下一句 / 想一想展开收起 / 关闭弹层
+//   5. 语音接力 / 故事配图与学情条 / 数学 10-20 与筛选 / 路由回顶部 / 弹层焦点循环
+//   6. PWA：离线冷启动 + 离线懒加载栏目
 //
 // 用法（先 npm run build）：
 //   npm run check:interactions
@@ -567,6 +569,98 @@ async function main() {
       if (calls < 2) throw new Error(`只触发了 ${calls} 个 utterance`)
       await clickAt('.detail-card .close-btn', 0)
       await waitFor(`!document.querySelector('.detail-text')`, 3000, '关闭详情')
+    })
+
+    /* ================= 5.5 本轮优化回归 ================= */
+    await step('故事：学情条 + 老牛配图', async () => {
+      await go('stories')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '绘本卡片')
+      if (!(await evaluate(`!!document.querySelector('.module-bar')`))) {
+        throw new Error('绘本页缺少学情条')
+      }
+      await clickText('.big-card', '小马过河')
+      await waitFor(`document.querySelector('.story-view')`, 5000, '绘本弹层')
+      await clickText('.story-nav .btn', '下一页')
+      await sleep(300)
+      await clickText('.story-nav .btn', '下一页')
+      await sleep(300)
+      const emoji = await textOf('.story-emoji')
+      if (!emoji.includes('🐮')) throw new Error(`第 3 页老牛配图异常: ${emoji}`)
+      await clickAt('.detail-card .close-btn', 0)
+      await waitFor(`!document.querySelector('.story-view')`, 3000, '关闭绘本')
+    })
+
+    await step('数学：10-20 内容 + 学情筛选', async () => {
+      await go('math')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '数字卡片')
+      if (!(await evaluate(`!!document.querySelector('.module-bar')`))) {
+        throw new Error('数学页缺少学情条')
+      }
+      if (!(await evaluate(`document.body.innerText.includes('二十')`))) {
+        throw new Error('页面没有「二十」')
+      }
+      const total = await countOf('.big-card')
+      if (total !== 21) throw new Error(`数字卡片应为 21 张，实际 ${total}`)
+
+      await clickText('.big-card', '二十')
+      await waitFor(`document.querySelector('.num-big')`, 5000, '数字详情')
+      if ((await textOf('.num-big')) !== '20') throw new Error('20 的详情数字不对')
+      const dots = await countOf('.num-dots span')
+      if (dots !== 20) throw new Error(`20 的圆点应为 20 个，实际 ${dots}`)
+      await clickAt('.detail-card .close-btn', 0)
+      await waitFor(`!document.querySelector('.num-big')`, 3000, '关闭数字详情')
+
+      await clickAt('.chip-btn', 2) // 学过（注意不能用 clickText：会先命中「没学过」）
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 1) throw new Error('「学过」筛选应只剩 1 张')
+      await clickAt('.chip-btn', 1) // 没学过
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 20) throw new Error('「没学过」筛选应为 20 张')
+      await clickAt('.chip-btn', 0) // 全部
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 21) throw new Error('「全部」筛选应恢复 21 张')
+    })
+
+    await step('路由：进入栏目回到顶部', async () => {
+      await go('')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '首页')
+      await evaluate(`window.scrollTo(0, document.body.scrollHeight)`)
+      await sleep(300)
+      if ((await evaluate('window.scrollY')) < 100) throw new Error('首页未成功滚动')
+      await clickText('.big-card', '儿童歌谣')
+      await waitFor(`location.hash.includes('/nursery')`, 5000, '进入歌谣栏目')
+      await sleep(700)
+      const y = await evaluate('window.scrollY')
+      if (y > 50) throw new Error(`进入栏目后仍在滚动位置 ${y}`)
+    })
+
+    await step('弹层：Tab 焦点循环 + 背景 inert', async () => {
+      await go('encyclopedia')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '百科卡片')
+      await clickText('.big-card', '太阳')
+      await waitFor(`document.querySelector('.detail-overlay')`, 5000, '详情弹层')
+      if (!(await evaluate(`document.querySelector('.app-shell')?.hasAttribute('inert')`))) {
+        throw new Error('弹层打开时背景未 inert')
+      }
+      const tabOk = await evaluate(`(() => {
+        const overlay = document.querySelector('.detail-overlay')
+        const items = [...overlay.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        if (items.length < 2) return 'too-few'
+        items[items.length - 1].focus()
+        overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+        const forward = document.activeElement === items[0]
+        items[0].focus()
+        overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+        const backward = document.activeElement === items[items.length - 1]
+        return forward && backward
+      })()`)
+      if (tabOk !== true) throw new Error(`焦点循环异常: ${tabOk}`)
+
+      await clickAt('.detail-card .close-btn', 0)
+      await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭详情')
+      if (await evaluate(`document.querySelector('.app-shell')?.hasAttribute('inert')`)) {
+        throw new Error('弹层关闭后背景仍 inert')
+      }
     })
 
     /* ================= 6. PWA 离线 ================= */

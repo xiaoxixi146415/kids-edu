@@ -1,20 +1,33 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { numbers, type MathNumber } from '../data/math'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useMathQuiz } from '../composables/useMathQuiz'
+import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
+import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import AppIcon from '../components/AppIcon.vue'
+import { applyFilter } from '../utils'
 
 const MODULE = 'math'
 const { speak, stop } = useSpeech()
-const { learn, isLearned } = useProgress()
+const { learn, isLearned, learnedCount } = useProgress()
 const { quiz, picked, correct, next, pick, feedbackText } = useMathQuiz()
 const selected = ref<MathNumber | null>(null)
 const feedback = ref('')
+const filter = ref<LearnFilter>('all')
+
+/** 栏目学情：数字卡片支持「全部 / 没学过 / 学过」筛选 */
+const progress = computed(() => ({ learned: learnedCount(MODULE), total: numbers.length }))
+const visibleNumbers = computed(() => applyFilter(numbers, filter.value, MODULE, isLearned))
+const emptyText = computed(() => {
+  if (filter.value === 'todo') return '🎉 太棒了！数字你都学完啦'
+  if (filter.value === 'done') return '还没有学过的数字，点上面的卡片开始吧'
+  return ''
+})
 
 function read(n: MathNumber) {
   return `${n.chinese}。${n.text}`
@@ -52,11 +65,13 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+
     <section class="group">
       <h2 class="group-title">认识数字</h2>
-      <div class="grid">
+      <div v-if="visibleNumbers.length" class="grid">
         <BigCard
-          v-for="n in numbers"
+          v-for="n in visibleNumbers"
           :key="n.id"
           :emoji="n.emoji"
           :title="String(n.num)"
@@ -66,6 +81,7 @@ onUnmounted(stop)
           @click="open(n)"
         />
       </div>
+      <p v-else class="list-empty" role="status">{{ emptyText }}</p>
     </section>
 
     <section class="group">

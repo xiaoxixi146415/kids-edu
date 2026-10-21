@@ -15,6 +15,17 @@
   --color-detail-text: #5c4a3c;    /* 详情正文 */
   --color-border-soft: #e3d5c2;
 
+  /* —— 交互反馈 / 辅助语义色（视图内禁止再写 hex，统一引用） —— */
+  --color-correct: #15803d;        /* 答对 / 完成（白字 ≥4.5:1） */
+  --color-correct-deep: #166534;   /* 答对文字（浅底） */
+  --color-wrong: #dc2626;          /* 答错 / 警示 */
+  --color-warn: #c2410c;           /* 剩余数量等提示（白字 ≥4.5:1） */
+  --color-info: #0369a1;           /* 进度数字 */
+  --color-accent-indigo: #4f46e5;
+  --color-accent-violet: #7c3aed;
+  --color-neutral-bg: #f1f5f9;
+  --color-neutral-text: #475569;
+
   --color-sky-top: #bde4ff;
   --color-sky-mid: #e8f7ff;
   --color-sky-bottom: #fff6d8;

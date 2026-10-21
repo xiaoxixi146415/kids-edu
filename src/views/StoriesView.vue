@@ -3,15 +3,21 @@ import { computed, onUnmounted, ref } from 'vue'
 import { stories, type Story } from '../data/stories'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
+import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import AppIcon from '../components/AppIcon.vue'
 
 const MODULE = 'stories'
 const { speak, stop } = useSpeech()
-const { learn, isLearned } = useProgress()
+const { learn, isLearned, learnedCount } = useProgress()
 const current = ref<Story | null>(null)
 const page = ref(0)
+const filter = ref<LearnFilter>('all')
+
+/** 栏目学情：绘本只展示进度，不做「没学过/学过」筛选 */
+const progress = computed(() => ({ learned: learnedCount(MODULE), total: stories.length }))
 
 const isFirst = computed(() => page.value === 0)
 const isLast = computed(
@@ -55,6 +61,12 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
+    <ModuleLearnBar
+      :learned="progress.learned"
+      :total="progress.total"
+      v-model:filter="filter"
+      :show-filter="false"
+    />
     <div class="grid">
       <BigCard
         v-for="s in stories"

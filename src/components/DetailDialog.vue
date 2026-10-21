@@ -19,28 +19,71 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 const dialogRef = ref<HTMLElement | null>(null)
 let lastFocused: HTMLElement | null = null
 
+/** 弹层打开时让背景不可交互，避免 Tab / 读屏跑到弹层后面 */
+function setBackgroundInert(on: boolean) {
+  const shell = document.querySelector<HTMLElement>('.app-shell')
+  if (!shell) return
+  if (on) shell.setAttribute('inert', '')
+  else shell.removeAttribute('inert')
+}
+
 function focusDialog() {
   nextTick(() => dialogRef.value?.focus())
 }
+
+/** 可聚焦元素（排除 disabled / tabindex=-1） */
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 watch(
   () => props.open,
   (open) => {
     if (open) {
       lastFocused = document.activeElement as HTMLElement | null
+      setBackgroundInert(true)
       focusDialog()
     } else {
+      setBackgroundInert(false)
       lastFocused?.focus?.()
       lastFocused = null
     }
-  }
+  },
+  { immediate: true }
 )
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
+  if (e.key === 'Escape') {
+    emit('close')
+    return
+  }
+  if (e.key !== 'Tab' || !dialogRef.value) return
+
+  const items = [...dialogRef.value.querySelectorAll<HTMLElement>(FOCUSABLE)]
+  if (!items.length) {
+    e.preventDefault()
+    return
+  }
+  const first = items[0]
+  const last = items[items.length - 1]
+  const active = document.activeElement
+
+  // 焦点意外落到弹层外：拉回第一个可聚焦元素
+  if (!dialogRef.value.contains(active)) {
+    e.preventDefault()
+    first.focus()
+    return
+  }
+  if (e.shiftKey && (active === first || active === dialogRef.value)) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && active === last) {
+    e.preventDefault()
+    first.focus()
+  }
 }
 
 onBeforeUnmount(() => {
+  setBackgroundInert(false)
   lastFocused?.focus?.()
 })
 </script>
@@ -57,7 +100,7 @@ onBeforeUnmount(() => {
         :aria-label="title"
         tabindex="-1"
         @click.self="emit('close')"
-        @keydown.esc="onKeydown"
+        @keydown="onKeydown"
       >
         <div class="detail-card" :class="tone">
           <button type="button" class="close-btn" aria-label="关闭" @click="emit('close')">

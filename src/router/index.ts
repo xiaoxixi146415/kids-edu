@@ -4,6 +4,11 @@ import HomeView from '../views/HomeView.vue'
 const router = createRouter({
   // hash 模式：静态托管（EdgeOne Pages）无需服务端 rewrite 配置
   history: createWebHashHistory(),
+  // 新进入栏目时回到顶部；浏览器后退则恢复原位置。
+  // 否则从首页下方点卡片，会把旧的滚动位置带到新页面（短页面直接落到底部）。
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition ?? { top: 0 }
+  },
   routes: [
     { path: '/', name: 'home', component: HomeView, meta: { title: '宝宝乐园' } },
     {
