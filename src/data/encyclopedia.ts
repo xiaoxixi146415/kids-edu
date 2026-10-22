@@ -154,7 +154,7 @@ export const encyclopedia: EncyclopediaItem[] = [
     category: '动物',
     emoji: '🐰',
     title: '兔子',
-    text: '兔子有两只长长的耳朵，爱吃青草、青菜和胡萝卜，跳起来一蹦一蹦的，遇到危险还会飞快地躲进地洞里。',
+    text: '兔子有两只长长的耳朵，爱吃青草和青菜，胡萝卜只能当小点心，不能吃太多。它跳起来一蹦一蹦的，遇到危险还会飞快地躲进地洞里。',
   },
   {
     id: 'frog',

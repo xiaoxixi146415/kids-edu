@@ -5,13 +5,13 @@ import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useResume } from '../composables/useResume'
 import { useMathQuiz } from '../composables/useMathQuiz'
-import type { LearnFilter } from '../types'
+import type { AgeFilter, LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import AppIcon from '../components/AppIcon.vue'
-import { applyFilter } from '../utils'
+import { applyAgeFilter, applyFilter } from '../utils'
 
 const MODULE = 'math'
 const { speak, stop } = useSpeech()
@@ -20,11 +20,16 @@ const { quiz, picked, correct, next, pick, feedbackText } = useMathQuiz()
 const selected = ref<MathNumber | null>(null)
 const feedback = ref('')
 const filter = ref<LearnFilter>('all')
+const age = ref<AgeFilter>('all')
 
-/** 栏目学情：数字卡片支持「全部 / 没学过 / 学过」筛选 */
+/** 栏目学情：数字卡片支持「全部 / 没学过 / 学过」+ 年龄筛选 */
 const progress = computed(() => ({ learned: learnedCount(MODULE), total: numbers.length }))
-const visibleNumbers = computed(() => applyFilter(numbers, filter.value, MODULE, isLearned))
+const ageNumbers = computed(() => applyAgeFilter(numbers, MODULE, age.value))
+const visibleNumbers = computed(() =>
+  applyFilter(ageNumbers.value, filter.value, MODULE, isLearned)
+)
 const emptyText = computed(() => {
+  if (age.value !== 'all' && ageNumbers.value.length === 0) return '这个年龄段还没有数字，换一个年龄段看看吧'
   if (filter.value === 'todo') return '🎉 太棒了！数字你都学完啦'
   if (filter.value === 'done') return '还没有学过的数字，点上面的卡片开始吧'
   return ''
@@ -47,8 +52,18 @@ function close() {
 }
 
 function onPick(n: number) {
+  const q = quiz.value
   pick(n)
   feedback.value = feedbackText()
+  // 答错时补一句分步思路，帮助孩子自己找到答案
+  if (!correct.value && q) feedback.value = `${feedback.value} ${q.hint}`
+  speak(feedback.value)
+}
+
+/** 作答前也可以主动听提示 */
+function showHint() {
+  if (!quiz.value) return
+  feedback.value = `提示：${quiz.value.hint}`
   speak(feedback.value)
 }
 
@@ -70,7 +85,7 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
-    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" v-model:age="age" />
 
     <section class="group">
       <h2 class="group-title">认识数字</h2>
@@ -122,6 +137,10 @@ onUnmounted(stop)
           <button type="button" class="btn btn-ghost" @click="speak(quiz.spoken)">
             <AppIcon name="play" />
             听题
+          </button>
+          <button type="button" class="btn btn-ghost" @click="showHint">
+            <AppIcon name="bulb" />
+            提示
           </button>
           <button type="button" class="btn btn-primary" @click="nextQuiz">
             <AppIcon name="book" />

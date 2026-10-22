@@ -4,11 +4,12 @@ import { stories, type Story } from '../data/stories'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useResume } from '../composables/useResume'
-import type { LearnFilter } from '../types'
+import type { AgeFilter, LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import AppIcon from '../components/AppIcon.vue'
+import { applyAgeFilter } from '../utils'
 
 const MODULE = 'stories'
 const { speak, stop } = useSpeech()
@@ -16,9 +17,11 @@ const { learn, isLearned, learnedCount, remember } = useProgress()
 const current = ref<Story | null>(null)
 const page = ref(0)
 const filter = ref<LearnFilter>('all')
+const age = ref<AgeFilter>('all')
 
-/** 栏目学情：绘本只展示进度，不做「没学过/学过」筛选 */
+/** 栏目学情：绘本只展示进度，不做「没学过/学过」筛选，但支持年龄筛选 */
 const progress = computed(() => ({ learned: learnedCount(MODULE), total: stories.length }))
+const visibleStories = computed(() => applyAgeFilter(stories, MODULE, age.value))
 
 const isFirst = computed(() => page.value === 0)
 const isLast = computed(
@@ -69,11 +72,12 @@ onUnmounted(stop)
       :learned="progress.learned"
       :total="progress.total"
       v-model:filter="filter"
+      v-model:age="age"
       :show-filter="false"
     />
-    <div class="grid">
+    <div v-if="visibleStories.length" class="grid">
       <BigCard
-        v-for="s in stories"
+        v-for="s in visibleStories"
         :key="s.id"
         :emoji="s.emoji"
         :title="s.title"
@@ -82,6 +86,7 @@ onUnmounted(stop)
         @click="open(s)"
       />
     </div>
+    <p v-else class="list-empty" role="status">这个年龄段还没有绘本，换一个年龄段看看吧</p>
 
     <DetailDialog
       :open="!!current"

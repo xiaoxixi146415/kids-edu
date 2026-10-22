@@ -5,13 +5,13 @@ import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useResume } from '../composables/useResume'
 import { buildCoupletQuiz, type CoupletUnit } from '../composables/useChallenge'
-import type { LearnFilter } from '../types'
+import type { AgeFilter, LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AppIcon from '../components/AppIcon.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import ChallengeLauncher from '../components/ChallengeLauncher.vue'
-import { applyFilter } from '../utils'
+import { applyAgeFilter, applyFilter } from '../utils'
 
 const MODULE = 'tangshi'
 const { speak, stop } = useSpeech()
@@ -20,14 +20,17 @@ const selected = ref<Tangshi | null>(null)
 const showMeaning = ref(false)
 
 const filter = ref<LearnFilter>('all')
+const age = ref<AgeFilter>('all')
 const progress = computed(() => ({ learned: learnedCount(MODULE), total: tangshi.length }))
 
+/** 当前年龄段的诗（挑战也只在当前年龄段里出题） */
+const ageItems = computed(() => applyAgeFilter(tangshi, MODULE, age.value))
+
 /** 应用筛选后的列表 */
-const items = computed(() =>
-  applyFilter(tangshi, filter.value, MODULE, isLearned)
-)
+const items = computed(() => applyFilter(ageItems.value, filter.value, MODULE, isLearned))
 
 const emptyText = computed(() => {
+  if (age.value !== 'all' && ageItems.value.length === 0) return '这个年龄段还没有古诗，换一个年龄段看看吧'
   if (filter.value === 'todo') return '🎉 太棒了！这些诗你都会背啦'
   if (filter.value === 'done') return '还没有学过的诗，点上面的大卡片背一背吧'
   return ''
@@ -35,7 +38,7 @@ const emptyText = computed(() => {
 
 /** 把整句诗拆成「上一句 → 下一句」的对子，供接句挑战用 */
 const coupletPool = computed<CoupletUnit[]>(() =>
-  tangshi.flatMap((t) => {
+  ageItems.value.flatMap((t) => {
     const out: CoupletUnit[] = []
     for (let i = 0; i + 1 < t.lines.length; i += 2) {
       out.push({ id: `${t.id}:${i}`, lead: t.lines[i], answer: t.lines[i + 1] })
@@ -81,7 +84,7 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
-    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" v-model:age="age" />
     <ChallengeLauncher module="tangshi" label="唐诗" :build="buildChallenge" :needs-sound="false" />
 
     <template v-if="items.length">

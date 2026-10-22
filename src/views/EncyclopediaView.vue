@@ -5,31 +5,37 @@ import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useResume } from '../composables/useResume'
 import { buildPickQuiz } from '../composables/useChallenge'
-import type { LearnFilter } from '../types'
+import type { AgeFilter, LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import ChallengeLauncher from '../components/ChallengeLauncher.vue'
-import { applyFilter, groupBy } from '../utils'
+import { applyAgeFilter, applyFilter, groupBy } from '../utils'
 
 const MODULE = 'encyclopedia'
 const { speak, stop } = useSpeech()
 const { learn, isLearned, learnedCount, remember, challengePrefs } = useProgress()
 const selected = ref<EncyclopediaItem | null>(null)
 
-/** 筛选：全部 / 没学过 / 学过 */
+/** 筛选：全部 / 没学过 / 学过；年龄：全部 / 3–4 岁 / 5–6 岁 */
 const filter = ref<LearnFilter>('all')
+const age = ref<AgeFilter>('all')
 
 /** 栏目学情（已学/总数），随学习实时更新 */
 const progress = computed(() => ({ learned: learnedCount(MODULE), total: encyclopedia.length }))
 
+/** 当前年龄段的内容（挑战也只在当前年龄段里出题） */
+const ageItems = computed(() => applyAgeFilter(encyclopedia, MODULE, age.value, (i) => i.category))
+
 /** 按 category 分组，并应用筛选 */
 const categories = computed(() => {
-  return groupBy(applyFilter(encyclopedia, filter.value, MODULE, isLearned), 'category')
+  const visible = applyFilter(ageItems.value, filter.value, MODULE, isLearned)
+  return groupBy(visible, 'category')
 })
 
 const emptyText = computed(() => {
+  if (age.value !== 'all' && ageItems.value.length === 0) return '这个年龄段还没有内容，换一个年龄段看看吧'
   if (filter.value === 'todo') return '🎉 太棒了！这个栏目的内容你都学完啦'
   if (filter.value === 'done') return '还没有学过的内容，点上面的大卡片开始吧'
   return ''
@@ -37,7 +43,7 @@ const emptyText = computed(() => {
 
 /** 今日小挑战：听名称 → 从 3 张图/名里选对（优先没学过的，混入最多 2 道错题） */
 function buildChallenge() {
-  const pool = encyclopedia.map((i) => ({ id: i.id, label: i.title, emoji: i.emoji }))
+  const pool = ageItems.value.map((i) => ({ id: i.id, label: i.title, emoji: i.emoji }))
   const prefs = challengePrefs(MODULE, pool.map((u) => u.id))
   return buildPickQuiz(pool, 5, 'grid', prefs)
 }
@@ -66,7 +72,7 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
-    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" v-model:age="age" />
     <ChallengeLauncher module="encyclopedia" label="知识百科" :build="buildChallenge" />
 
     <template v-if="categories.length">

@@ -56,6 +56,8 @@ export interface PickUnit {
   id: string
   label: string
   emoji: string
+  /** 交给 TTS 的读音；缺省用 label。拼音题用它避免把拉丁字母念成英文 */
+  say?: string
 }
 
 /** 接诗句题的条目单元 */
@@ -109,18 +111,26 @@ function orderPool<T extends { id: string }>(pool: T[], size: number, prefs: Qui
   return [...picked, ...rest]
 }
 
-function pickDistractors<T extends { id: string; label: string }>(
+function pickDistractors<T extends { id: string; label: string; say?: string }>(
   pool: T[],
   excludeId: string,
   excludeLabel: string,
+  excludeSay: string,
   count: number
 ): T[] {
-  const rest = shuffle(pool.filter((u) => u.id !== excludeId && u.label !== excludeLabel))
+  const rest = shuffle(
+    pool.filter(
+      (u) =>
+        u.id !== excludeId &&
+        u.label !== excludeLabel &&
+        (u.say ?? u.label) !== excludeSay
+    )
+  )
   const picked: T[] = []
   for (const u of rest) {
     if (picked.length >= count) break
-    // 避免选项文案重复
-    if (!picked.some((p) => p.label === u.label)) {
+    // 避免选项文案或读音重复
+    if (!picked.some((p) => p.label === u.label || (p.say ?? p.label) === (u.say ?? u.label))) {
       picked.push(u)
     }
   }
@@ -135,15 +145,18 @@ export function buildPickQuiz(
   pool: PickUnit[],
   size = QUIZ_SIZE,
   variant: QuizVariant = 'grid',
-  prefs: QuizPrefs = {}
+  prefs: QuizPrefs = {},
+  ask = ''
 ): QuizQuestion[] {
   const questions: QuizQuestion[] = []
   let lastAnswer = ''
+  const askText = ask || (variant === 'chars' ? '听一听，它是哪个字？' : '听一听，它是谁？')
   for (const target of orderPool(pool, size, prefs)) {
     if (questions.length >= size) break
-    // 连续两题同一答案容易让孩子形成「惯性点击」，顺延到下一道
-    if (target.label === lastAnswer) continue
-    const distractors = pickDistractors(pool, target.id, target.label, 2)
+    const targetSay = target.say ?? target.label
+    // 连续两题同一读音容易让孩子形成「惯性点击」，顺延到下一道
+    if (targetSay === lastAnswer) continue
+    const distractors = pickDistractors(pool, target.id, target.label, targetSay, 2)
     if (distractors.length < 2) continue
     // 先洗牌再映射：答案用 id 定位，避免「同名干扰项」被误判
     const picks = shuffle([target, ...distractors])
@@ -152,14 +165,14 @@ export function buildPickQuiz(
       label: u.label,
     }))
     questions.push({
-      ask: variant === 'chars' ? '听一听，它是哪个字？' : '听一听，它是谁？',
-      say: `${target.label}。`,
+      ask: askText,
+      say: `${targetSay}。`,
       variant,
       options,
       answer: picks.findIndex((u) => u.id === target.id),
       refId: target.id,
     })
-    lastAnswer = target.label
+    lastAnswer = targetSay
   }
   return questions
 }

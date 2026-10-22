@@ -15,9 +15,33 @@ export interface Quiz {
   dots: string[]
   options: number[]
   answer: number
+  /** 答错/点「提示」时给的分步思路 */
+  hint: string
 }
 
-const CN = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二']
+const CN = [
+  '零',
+  '一',
+  '二',
+  '三',
+  '四',
+  '五',
+  '六',
+  '七',
+  '八',
+  '九',
+  '十',
+  '十一',
+  '十二',
+  '十三',
+  '十四',
+  '十五',
+  '十六',
+  '十七',
+  '十八',
+  '十九',
+  '二十',
+]
 const ENCOURAGE = ['答对啦，真棒！', '太厉害啦！', '答对咯！', '真聪明！', '好棒呀！']
 const HINTS = ['再想一想哦', '没关系，再试试', '差一点就对了，加油！']
 
@@ -39,18 +63,28 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-/** 生成 3 个选项（1 正确 + 2 个相邻干扰），范围 0-12 */
+/** 生成 3 个选项（1 正确 + 2 个相邻干扰），范围 0-20 */
 function buildOptions(answer: number): number[] {
   const opts = new Set<number>([answer])
   const deltas = [1, -1, 2, -2, 3, -3]
   let guard = 0
-  while (opts.size < 3 && guard < 24) {
+  while (opts.size < 3 && guard < 30) {
     const v = answer + deltas[randInt(0, deltas.length - 1)]
-    if (v >= 0 && v <= 12) opts.add(v)
+    if (v >= 0 && v <= 20) opts.add(v)
     guard++
   }
-  for (let i = 0; i <= 12 && opts.size < 3; i++) opts.add(i)
+  for (let i = 0; i <= 20 && opts.size < 3; i++) opts.add(i)
   return shuffle([...opts])
+}
+
+/** 加法分步提示：十以内往后数，超过十先凑十 */
+function addHint(a: number, b: number): string {
+  if (a + b <= 10) return `先伸出${toCn(a)}根手指，再接着数${toCn(b)}个，就是${toCn(a + b)}。`
+  if (a < 10) {
+    const need = 10 - a
+    return `先把${toCn(a)}凑成十：${toCn(a)}加${toCn(need)}是十，十再加${toCn(b - need)}，就是${toCn(a + b)}。`
+  }
+  return `十加${toCn(b)}，就是${toCn(a + b)}。`
 }
 
 function buildQuiz(): Quiz {
@@ -66,12 +100,13 @@ function buildQuiz(): Quiz {
       dots: Array.from({ length: n }, () => emoji),
       options: buildOptions(n),
       answer: n,
+      hint: '一个一个指着数，数到几就是几。',
     }
   }
 
   if (kind === 'add') {
-    const a = randInt(1, 5)
-    const b = randInt(1, 10 - a)
+    const a = randInt(1, 10)
+    const b = randInt(1, 20 - a)
     const answer = a + b
     return {
       type: 'add',
@@ -80,10 +115,11 @@ function buildQuiz(): Quiz {
       dots: [],
       options: buildOptions(answer),
       answer,
+      hint: addHint(a, b),
     }
   }
 
-  const a = randInt(2, 10)
+  const a = randInt(2, 20)
   const b = randInt(1, a - 1)
   const answer = a - b
   return {
@@ -93,6 +129,7 @@ function buildQuiz(): Quiz {
     dots: [],
     options: buildOptions(answer),
     answer,
+    hint: `从${toCn(a)}开始，往回数${toCn(b)}个，就是${toCn(answer)}。`,
   }
 }
 

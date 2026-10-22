@@ -5,14 +5,14 @@ import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useResume } from '../composables/useResume'
 import { buildRiddleQuiz, type RiddleUnit } from '../composables/useChallenge'
-import type { LearnFilter } from '../types'
+import type { AgeFilter, LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import AppIcon from '../components/AppIcon.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
 import ChallengeLauncher from '../components/ChallengeLauncher.vue'
-import { applyFilter } from '../utils'
+import { applyAgeFilter, applyFilter } from '../utils'
 
 const MODULE = 'brainteasers'
 const { speak, stop } = useSpeech()
@@ -21,14 +21,17 @@ const selected = ref<BrainTeaser | null>(null)
 const showAnswer = ref(false)
 
 const filter = ref<LearnFilter>('all')
+const age = ref<AgeFilter>('all')
 const progress = computed(() => ({ learned: learnedCount(MODULE), total: brainteasers.length }))
 
+/** 当前年龄段的内容（挑战也只在当前年龄段里出题） */
+const ageItems = computed(() => applyAgeFilter(brainteasers, MODULE, age.value))
+
 /** 应用筛选后的列表 */
-const items = computed(() =>
-  applyFilter(brainteasers, filter.value, MODULE, isLearned)
-)
+const items = computed(() => applyFilter(ageItems.value, filter.value, MODULE, isLearned))
 
 const emptyText = computed(() => {
+  if (age.value !== 'all' && ageItems.value.length === 0) return '这个年龄段还没有题目，换一个年龄段看看吧'
   if (filter.value === 'todo') return '🎉 太棒了！脑筋急转弯你都猜完啦'
   if (filter.value === 'done') return '还没有猜过的题目，点上面的大卡片开动小脑瓜吧'
   return ''
@@ -36,7 +39,7 @@ const emptyText = computed(() => {
 
 /** 今日小挑战的题库：谜面 → 谜底（答案句子作选项） */
 const riddlePool = computed<RiddleUnit[]>(() =>
-  brainteasers.map((b) => ({ id: b.id, question: b.question, answer: b.answer }))
+  ageItems.value.map((b) => ({ id: b.id, question: b.question, answer: b.answer }))
 )
 
 function buildChallenge() {
@@ -72,7 +75,7 @@ onUnmounted(stop)
 
 <template>
   <div class="list-page">
-    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" v-model:age="age" />
     <ChallengeLauncher module="brainteasers" label="脑筋急转弯" :build="buildChallenge" :needs-sound="false" />
 
     <template v-if="items.length">

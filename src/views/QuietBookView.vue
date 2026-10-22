@@ -12,10 +12,13 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { quietbook } from '../data/quietbook'
-import type { QbOption, QbRound } from '../data/quietbook'
+import type { QbOption, QbPage, QbRound } from '../data/quietbook'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useOpenParam } from '../composables/useResume'
+import type { AgeFilter } from '../types'
+import { AGE_FILTERS } from '../data/ages'
+import { applyAgeFilter } from '../utils'
 
 const MODULE = 'quietbook'
 const CN = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
@@ -27,9 +30,12 @@ const { speak, stop } = useSpeech()
 const { learn, isLearned, remember } = useProgress()
 
 const total = quietbook.length
+/** 年龄筛选：只影响书页选择条/翻页，不影响总进度 */
+const age = ref<AgeFilter>('all')
+const pages = computed(() => applyAgeFilter(quietbook, MODULE, age.value))
 // 首页「继续学习」直达上次玩的那一页：挂载前先定好页码，避免先播第 1 页再跳页
 const { openId, clear } = useOpenParam()
-const resumeIndex = openId ? quietbook.findIndex((p) => p.id === openId) : -1
+const resumeIndex = openId ? pages.value.findIndex((p) => p.id === openId) : -1
 const pageIndex = ref(resumeIndex >= 0 ? resumeIndex : 0)
 const roundIndex = ref(0)
 /** 当前是否正在玩（false = 整页完成，展示庆祝） */
@@ -51,10 +57,14 @@ let wrongTimer: number | undefined
 let phaseTimer: number | undefined
 let scrollTimer: number | undefined
 
-const page = computed(() => quietbook[pageIndex.value])
+const page = computed<QbPage>(() => pages.value[pageIndex.value] ?? quietbook[0])
 const round = computed<QbRound>(() => page.value.rounds[roundIndex.value])
-const pageNo = computed(() => pageIndex.value + 1)
-const cnPage = computed(() => CN[pageIndex.value] ?? String(pageNo.value))
+const pageNo = computed(() => quietbook.findIndex((p) => p.id === page.value.id) + 1)
+const cnPage = computed(() => CN[pageNo.value - 1] ?? String(pageNo.value))
+/** 书页选择条里的原始页码（筛选后仍显示书里的第几页） */
+function pageNumber(p: QbPage) {
+  return quietbook.findIndex((q) => q.id === p.id) + 1
+}
 const isMany = computed(() => round.value.goal === 'pick-all')
 const isSpot = computed(() => round.value.goal === 'spot-diff')
 const isShadow = computed(() => round.value.goal === 'shadow')
@@ -298,7 +308,7 @@ function emojiOf(o: QbOption | undefined): string {
 
 /** 翻页统一入口：重置本页并朗读引导语 */
 function goto(i: number) {
-  if (i < 0 || i >= total || i === pageIndex.value) return
+  if (i < 0 || i >= pages.value.length || i === pageIndex.value) return
   pageIndex.value = i
   // 在底部点「下一页」后新页可能落在视口外；等翻页动画结束再滚回书页顶部
   window.clearTimeout(scrollTimer)
@@ -313,12 +323,18 @@ watch(pageIndex, () => {
   openPage()
 })
 
+// 切换年龄后回到该年龄段的第一页（页码可能已经超出筛选后的页数）
+watch(age, () => {
+  if (pageIndex.value !== 0) pageIndex.value = 0
+  else openPage()
+})
+
 function replayPage() {
   openPage()
 }
 
 function nextPageFromDone() {
-  if (pageNo.value < total) goto(pageNo.value)
+  if (pageIndex.value < pages.value.length - 1) goto(pageIndex.value + 1)
   else router.push('/')
 }
 
@@ -347,10 +363,26 @@ onUnmounted(() => {
       </div>
     </section>
 
+    <!-- 年龄筛选 -->
+    <div class="filter-chips age-chips qb-age" role="group" aria-label="按年龄段筛选">
+      <span class="filter-label" aria-hidden="true">年龄</span>
+      <button
+        v-for="a in AGE_FILTERS"
+        :key="a.value"
+        type="button"
+        class="chip-btn"
+        :class="{ active: age === a.value }"
+        :aria-pressed="age === a.value"
+        @click="age = a.value"
+      >
+        {{ a.label }}
+      </button>
+    </div>
+
     <!-- 书页选择条 -->
     <div class="qb-chips" role="tablist" aria-label="选择安静书的页面">
       <button
-        v-for="(p, i) in quietbook"
+        v-for="(p, i) in pages"
         :key="p.id"
         type="button"
         class="qb-chip"
@@ -366,9 +398,9 @@ onUnmounted(() => {
         <span class="qb-chip-name">{{ p.title }}</span>
         <span v-if="isLearned(MODULE, p.id)" class="qb-chip-check" aria-hidden="true">✓</span>
         <span class="sr-only">
-          第{{ CN[i] ?? i + 1 }}页{{ p.title }}{{ i === pageIndex ? '，正在玩' : '，点这里去玩' }}{{
-            isLearned(MODULE, p.id) ? '，玩过了' : ''
-          }}
+          第{{ CN[pageNumber(p) - 1] ?? pageNumber(p) }}页{{ p.title }}{{
+            i === pageIndex ? '，正在玩' : '，点这里去玩'
+          }}{{ isLearned(MODULE, p.id) ? '，玩过了' : '' }}
         </span>
       </button>
     </div>
@@ -547,7 +579,7 @@ onUnmounted(() => {
       <button
         type="button"
         class="btn btn-primary"
-        :disabled="pageIndex >= total - 1 || !playing"
+        :disabled="pageIndex >= pages.length - 1 || !playing"
         @click="goto(pageIndex + 1)"
       >
         下一页 ›

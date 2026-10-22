@@ -14,6 +14,7 @@
 //   9. 弹层焦点循环 + 背景 inert + body 滚动锁
 //  10. PWA：离线冷启动 + 离线懒加载栏目
 //  11. 家长报告 / 首页续学直达条目 / 错题优先出题 / 两步确认清空
+//  12. 年龄筛选（数学 / 拼音 / 安静书）/ 拼音声调与易混分组 / 数学分步提示
 //
 // 用法（先 npm run build）：
 //   npm run check:interactions
@@ -43,6 +44,16 @@ const brainteaserIds = [
     /id:\s*'([^']+)'/g
   ),
 ].map((m) => m[1])
+
+/** 各栏目 total（家长报告完成度断言），随内容扩充自动更新 */
+const moduleTotals = Object.fromEntries(
+  [
+    ...readFileSync(path.join(ROOT, 'src', 'data', 'categories.ts'), 'utf8').matchAll(
+      /module:\s*'([^']+)',\s*total:\s*(\d+)/g
+    ),
+  ].map((m) => [m[1], Number(m[2])])
+)
+const totalContent = Object.values(moduleTotals).reduce((sum, n) => sum + n, 0)
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -611,6 +622,14 @@ async function main() {
       await waitFor(`document.querySelector('.quiz-opt.wrong')`, 3000, '答错样式')
       const fb = await textOf('.quiz-feedback')
       if (!fb) throw new Error('答错后没有反馈文案')
+
+      // 分步提示：答错后 / 主动点「提示」都应给出思路
+      await clickText('.quiz-actions .btn', '提示')
+      await waitFor(
+        `document.querySelector('.quiz-feedback')?.textContent.includes('提示：')`,
+        3000,
+        '分步提示'
+      )
     })
 
     /* ================= 4. 儿童歌谣 ================= */
@@ -736,6 +755,54 @@ async function main() {
       await clickAt('.chip-btn', 0) // 全部
       await sleep(300)
       if ((await countOf('.big-card')) !== 21) throw new Error('「全部」筛选应恢复 21 张')
+    })
+
+    await step('年龄筛选：数学 3–4 / 5–6 分段', async () => {
+      await go('math')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '数字卡片')
+      await clickText('.age-chips .chip-btn', '3–4 岁')
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 10) throw new Error('数学 3–4 岁应为 10 张')
+      await clickText('.age-chips .chip-btn', '5–6 岁')
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 11) throw new Error('数学 5–6 岁应为 11 张')
+      await clickText('.age-chips .chip-btn', '全部年龄')
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 21) throw new Error('数学「全部年龄」应恢复 21 张')
+    })
+
+    await step('拼音：声调 / 易混分组 + 年龄筛选', async () => {
+      await go('pinyin')
+      await waitFor(`document.querySelector('.big-card')`, 8000, '拼音卡片')
+      if ((await countOf('.big-card')) !== 75) throw new Error('拼音卡片应为 75 张')
+      const body = await evaluate('document.body.innerText')
+      if (!body.includes('声调') || !body.includes('易混')) {
+        throw new Error('缺少声调 / 易混分组')
+      }
+      await clickText('.age-chips .chip-btn', '3–4 岁')
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 27) throw new Error('拼音 3–4 岁应为 27 张')
+      await clickText('.age-chips .chip-btn', '5–6 岁')
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 48) throw new Error('拼音 5–6 岁应为 48 张')
+      await clickText('.age-chips .chip-btn', '全部年龄')
+      await sleep(300)
+      if ((await countOf('.big-card')) !== 75) throw new Error('拼音「全部年龄」应恢复 75 张')
+    })
+
+    await step('年龄筛选：安静书按年龄段切换书页', async () => {
+      await go('quietbook')
+      await waitFor(`document.querySelector('.qb-chip')`, 8000, '安静书书页')
+      if ((await countOf('.qb-chip')) !== 9) throw new Error('安静书应显示 9 页')
+      await clickText('.age-chips .chip-btn', '5–6 岁')
+      await sleep(400)
+      if ((await countOf('.qb-chip')) !== 3) throw new Error('安静书 5–6 岁应为 3 页')
+      await clickText('.age-chips .chip-btn', '3–4 岁')
+      await sleep(400)
+      if ((await countOf('.qb-chip')) !== 6) throw new Error('安静书 3–4 岁应为 6 页')
+      await clickText('.age-chips .chip-btn', '全部年龄')
+      await sleep(400)
+      if ((await countOf('.qb-chip')) !== 9) throw new Error('安静书「全部年龄」应恢复 9 页')
     })
 
     await step('路由：进入栏目回到顶部', async () => {
@@ -999,7 +1066,7 @@ async function main() {
 
         if ((await countOf('.parent-module')) !== 10) throw new Error('栏目完成度不是 10 项')
         const overall = await textOf('#parent-modules-title ~ .parent-lead')
-        if (!overall.includes('3 / 322')) throw new Error(`总进度异常: ${overall}`)
+        if (!overall.includes(`3 / ${totalContent}`)) throw new Error(`总进度异常: ${overall}`)
         const moduleCount = (name) =>
           evaluate(`(() => {
             const row = [...document.querySelectorAll('.parent-module')].find(
@@ -1007,8 +1074,12 @@ async function main() {
             )
             return row?.querySelector('.parent-module-count')?.textContent.trim() ?? ''
           })()`)
-        if ((await moduleCount('数学启蒙')) !== '2/21') throw new Error('数学完成度异常')
-        if ((await moduleCount('识字认字')) !== '1/44') throw new Error('识字完成度异常')
+        if ((await moduleCount('数学启蒙')) !== `2/${moduleTotals.math}`) {
+          throw new Error('数学完成度异常')
+        }
+        if ((await moduleCount('识字认字')) !== `1/${moduleTotals.hanzi}`) {
+          throw new Error('识字完成度异常')
+        }
 
         if ((await countOf('.parent-wrong-group')) !== 1) throw new Error('错题分组数异常')
         if ((await countOf('.parent-mistake-btn')) !== 2) throw new Error('错题条数异常')

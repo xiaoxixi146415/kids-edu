@@ -1,6 +1,6 @@
 import type { ContentItem } from '../types'
 
-type Group = '声母' | '韵母' | '整体认读'
+type Group = '声母' | '韵母' | '整体认读' | '声调' | '易混'
 export interface PinyinItem extends ContentItem {
   /** 分组：声母 / 韵母 / 整体认读音节 */
   group: Group
@@ -95,4 +95,20 @@ export const pinyin: PinyinItem[] = [
   { id: 'yin', group: '整体认读', pinyin: 'yin', sound: '音', example: '声音', emoji: '🔊', text: '一口气整体读成「音」，声音的音。' },
   { id: 'yun', group: '整体认读', pinyin: 'yun', sound: '云', example: '云朵', emoji: '☁️', text: '一口气整体读成「云」，云朵的云。' },
   { id: 'ying', group: '整体认读', pinyin: 'ying', sound: '鹰', example: '老鹰', emoji: '🦅', text: '一口气整体读成「鹰」，老鹰的鹰。' },
+
+  // ===== 声调 =====
+  { id: 'tone-1', group: '声调', pinyin: 'bā', sound: '八', example: '八个', emoji: '8️⃣', text: '第一声，声音又高又平，像在平平的路上走。八，八个的八。' },
+  { id: 'tone-2', group: '声调', pinyin: 'bá', sound: '拔', example: '拔萝卜', emoji: '🥕', text: '第二声，声音往上扬，像把萝卜往上拔。拔，拔萝卜的拔。' },
+  { id: 'tone-3', group: '声调', pinyin: 'bǎ', sound: '把', example: '一把伞', emoji: '☂️', text: '第三声，声音先降后升，像先蹲下再站起来。把，一把伞的把。' },
+  { id: 'tone-4', group: '声调', pinyin: 'bà', sound: '爸', example: '爸爸', emoji: '👨', text: '第四声，声音又快又往下，像拍一下皮球。爸，爸爸的爸。' },
+
+  // ===== 易混声母对比 =====
+  { id: 'bp', group: '易混', pinyin: 'b / p', sound: '玻 坡', example: '玻璃 · 皮球', emoji: '🧊', text: 'b 和 p 嘴型一样，p 要多吹一口气。把手放在嘴巴前面，感觉到气的是 p。' },
+  { id: 'dt', group: '易混', pinyin: 'd / t', sound: '得 特', example: '大象 · 太阳', emoji: '🐘', text: 'd 和 t 舌头位置一样，t 要多吹一口气。大象的 d，太阳的 t。' },
+  { id: 'gk', group: '易混', pinyin: 'g / k', sound: '哥 科', example: '哥哥 · 卡车', emoji: '🚚', text: 'g 和 k 都在喉咙深处发音，k 的气更强。哥哥的 g，卡车的 k。' },
+  { id: 'jq', group: '易混', pinyin: 'j / q', sound: '基 七', example: '积木 · 气球', emoji: '🎈', text: 'j 和 q 的嘴型差不多，q 要多吹一口气。积木的 j，气球的 q。' },
+  { id: 'zhz', group: '易混', pinyin: 'zh / z', sound: '知 资', example: '竹子 · 足球', emoji: '🎋', text: 'zh 要把舌头翘起来，z 舌头平放。竹子的 zh，足球的 z。' },
+  { id: 'chc', group: '易混', pinyin: 'ch / c', sound: '吃 雌', example: '虫子 · 草莓', emoji: '🐛', text: 'ch 翘起舌头再送气，c 平放舌头送气。虫子的 ch，草莓的 c。' },
+  { id: 'shs', group: '易混', pinyin: 'sh / s', sound: '诗 丝', example: '狮子 · 松鼠', emoji: '🦁', text: 'sh 翘起舌头，s 舌头平放像小蛇。狮子的 sh，松鼠的 s。' },
+  { id: 'nl', group: '易混', pinyin: 'n / l', sound: '讷 勒', example: '牛奶 · 老虎', emoji: '🥛', text: 'n 从鼻子出气，l 让舌尖轻轻弹一下。牛奶的 n，老虎的 l。' },
 ]

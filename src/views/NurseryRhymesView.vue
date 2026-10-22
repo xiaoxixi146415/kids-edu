@@ -4,12 +4,12 @@ import { nurseryRhymes, type NurseryRhyme } from '../data/nursery'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 import { useResume } from '../composables/useResume'
-import type { LearnFilter } from '../types'
+import type { AgeFilter, LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AppIcon from '../components/AppIcon.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
-import { groupBy, applyFilter } from '../utils'
+import { groupBy, applyAgeFilter, applyFilter } from '../utils'
 
 const MODULE = 'nursery'
 const { speak, speakLines, stop, muted, supported } = useSpeech()
@@ -22,14 +22,22 @@ const playing = ref(false)
 const showTip = ref(false)
 
 const filter = ref<LearnFilter>('all')
+const age = ref<AgeFilter>('all')
 const progress = computed(() => ({ learned: learnedCount(MODULE), total: nurseryRhymes.length }))
+
+/** 当前年龄段的内容 */
+const ageItems = computed(() =>
+  applyAgeFilter(nurseryRhymes, MODULE, age.value, (r) => r.category)
+)
 
 /** 按 category 分组 + 应用筛选 */
 const groups = computed(() => {
-  return groupBy(applyFilter(nurseryRhymes, filter.value, MODULE, isLearned), 'category')
+  const visible = applyFilter(ageItems.value, filter.value, MODULE, isLearned)
+  return groupBy(visible, 'category')
 })
 
 const emptyText = computed(() => {
+  if (age.value !== 'all' && ageItems.value.length === 0) return '这个年龄段还没有歌谣，换一个年龄段看看吧'
   if (filter.value === 'todo') return '🎉 太棒了！这些歌你都会唱啦'
   if (filter.value === 'done') return '还没有唱过的歌，点上面的卡片听一听吧'
   return ''
@@ -151,7 +159,7 @@ onUnmounted(() => {
 
 <template>
   <div class="list-page">
-    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" v-model:age="age" />
 
     <template v-if="groups.length">
       <section v-for="[cat, items] in groups" :key="cat" class="group">

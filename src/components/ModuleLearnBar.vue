@@ -5,7 +5,8 @@
  * - 全部学完时显示祝贺语
  */
 import { computed } from 'vue'
-import type { LearnFilter } from '../types'
+import type { AgeFilter, LearnFilter } from '../types'
+import { AGE_FILTERS } from '../data/ages'
 
 const props = withDefaults(
   defineProps<{
@@ -17,11 +18,18 @@ const props = withDefaults(
     filter: LearnFilter
     /** 是否显示筛选 chips（绘本等特殊列表可只显示进度） */
     showFilter?: boolean
+    /** 当前年龄筛选 */
+    age?: AgeFilter
+    /** 是否显示年龄筛选（默认显示） */
+    showAge?: boolean
   }>(),
-  { showFilter: true }
+  { showFilter: true, age: 'all', showAge: true }
 )
 
-const emit = defineEmits<{ (e: 'update:filter', v: LearnFilter): void }>()
+const emit = defineEmits<{
+  (e: 'update:filter', v: LearnFilter): void
+  (e: 'update:age', v: AgeFilter): void
+}>()
 
 const pct = computed(() => (props.total === 0 ? 0 : Math.round((props.learned / props.total) * 100)))
 const allDone = computed(() => props.total > 0 && props.learned >= props.total)
@@ -64,6 +72,21 @@ const FILTERS: { value: LearnFilter; label: string }[] = [
         @click="emit('update:filter', f.value)"
       >
         {{ f.label }}
+      </button>
+    </div>
+
+    <div v-if="showAge" class="filter-chips age-chips" role="group" aria-label="按年龄段筛选">
+      <span class="filter-label" aria-hidden="true">年龄</span>
+      <button
+        v-for="a in AGE_FILTERS"
+        :key="a.value"
+        type="button"
+        class="chip-btn"
+        :class="{ active: age === a.value }"
+        :aria-pressed="age === a.value"
+        @click="emit('update:age', a.value)"
+      >
+        {{ a.label }}
       </button>
     </div>
   </div>

@@ -10,10 +10,10 @@
 | 🤔 **脑筋急转弯** | 先读题目，点「揭晓答案」再读答案 | 什么东西越洗越脏？ |
 | 📜 **唐诗** | 经典唐诗 + 白话译文，读古诗 / 听译文 | 静夜思、春晓、咏鹅…… |
 | ✏️ **识字认字** | 大字形 + 拼音 + 组词，认一认汉字 | 一、日、山、水…… |
-| 🔢 **数学启蒙** | 数字认知 + 数一数/加减法趣味练习 | 0-9 数字、3 选 1 练习 |
+| 🔢 **数学启蒙** | 数字认知 + 数一数/20 以内加减法趣味练习 | 0-20 数字、3 选 1 练习 + 分步提示 |
 | 🦁 **动物乐园** | 认识动物，听叫声和讲解 | 大象、老虎、海豚…… |
 | 📚 **绘本故事** | 逐页翻读的有声小故事 | 小马过河、龟兔赛跑…… |
-| 🔤 **拼音乐园** | 声母、韵母、整体认读，认音学词 | b、a、zh、yi…… |
+| 🔤 **拼音乐园** | 声母、韵母、整体认读、声调与易混对比 | b、a、zh、yi、bā bá bǎ bà…… |
 | 📖 **安静书** | 电子机关书，点一点玩法合集 | 数一数、找不同、谁不见了…… |
 | 🎵 **儿童歌谣** | 逐句动画童谣剧场，连唱一遍自动翻句 | 小星星、两只老虎、拔萝卜…… |
 
@@ -109,7 +109,7 @@ npm run dev        # 本地预览：http://localhost:5173
 npm run build      # 产物输出到 dist/
 npm run preview    # 本地预览生产包
 npm run gen-icons  # 重新生成 PWA 图标（改过 favicon.svg 后运行）
-npm run check:counts        # 校验首页各栏目 total 与 src/data 实际条数一致
+npm run check:counts        # 校验各栏目 total + 每个栏目都有 3–4 岁 / 5–6 岁标注
 npm run check:interactions  # headless Chrome 真实点击验证交互（需先 npm run build）
 ```
 
@@ -129,6 +129,12 @@ npm run check:interactions  # headless Chrome 真实点击验证交互（需先 
 - `pinyin.ts` → 拼音乐园：`{ id, group, pinyin, example, emoji, text }`
 - `quietbook.ts` → 安静书：`{ id, title, emoji, bg, accent, rounds[] }`（goal 支持 pick-one/pick-all/spot-diff/whats-missing/shadow）
 - `nursery.ts` → 儿童歌谣：`{ id, category, emoji, title, lines[]{emoji,text}, tip }`
+
+**年龄段**：各栏目的 3–4 岁 / 5–6 岁标注集中在 `src/data/ages.ts`，不在内容文件里重复写。
+有主题分组的栏目按分组标注；没有分组的栏目用 `older` 列出进阶条目，其余默认 3–4 岁。
+新增内容后运行 `npm run check:counts`，会检查 id / 分组是否写错、每个栏目是否同时覆盖两个年龄段。
+
+**内容复核**：新增或修改事实性内容后，同步更新 `docs/content-audit.md` 的抽检记录与复检日期。
 
 例如在 `brainteasers.ts` 数组末尾加一条：
 
