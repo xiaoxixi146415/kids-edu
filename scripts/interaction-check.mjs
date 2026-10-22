@@ -4,11 +4,13 @@
 //
 // 覆盖：
 //   1. 安静书：多选收集 / 点错摇一摇 / 整页完成 + 得星 / 「谁不见了」记忆阶段
-//   2. 今日小挑战：答题 → 纠正 → 结算 → 再玩一次全对 → 闯关成功 + 得星
-//   3. 数学练习：数一数/加减法 → 答对反馈 → 换一题 → 答错反馈
-//   4. 儿童歌谣：连唱逐句推进 / 下一句 / 想一想展开收起 / 关闭弹层
-//   5. 语音接力 / 故事配图与学情条 / 数学 10-20 与筛选 / 路由回顶部 / 弹层焦点循环
-//   6. PWA：离线冷启动 + 离线懒加载栏目
+//   2. 今日小挑战：答题 → 纠正 → 结算 + 答错回顾 → 再玩一次全对 → 闯关成功 + 得星
+//   3. 脑筋急转弯小挑战：谜面 + 3 个谜底选项
+//   4. 静音兜底：挑战直接显示题目文字，不依赖语音
+//   5. 数学练习：数一数/加减法 → 答对反馈 → 换一题 → 答错反馈
+//   6. 儿童歌谣：连唱逐句推进 / 下一句 / 想一想展开收起 / 关闭弹层
+//   7. 语音接力 / 故事配图与学情条 / 数学 10-20 与筛选 / 路由回顶部 / 弹层焦点循环
+//   8. PWA：离线冷启动 + 离线懒加载栏目
 //
 // 用法（先 npm run build）：
 //   npm run check:interactions
@@ -405,6 +407,16 @@ async function main() {
       await waitFor(`document.querySelector('.cq-result')`, 5000, '结算屏')
       const score = await textOf('.cq-result-msg')
       if (!/答对了 \d \/ 5 题/.test(score)) throw new Error(`结算文案异常: ${score}`)
+      // 答错回顾：答错几题就应列出几条（全对则不应出现）
+      const got = Number((score.match(/答对了 (\d+)/) ?? [])[1])
+      if (got < 5) {
+        const reviewCount = await countOf('.cq-review-list li')
+        if (reviewCount !== 5 - got) {
+          throw new Error(`答错回顾条目数不符: ${reviewCount} 条（答对 ${got} 题）`)
+        }
+      } else if ((await countOf('.cq-review')) !== 0) {
+        throw new Error('全对却出现了答错回顾')
+      }
 
       // 再玩一次：题目顺序不变，按记录的正确项答完
       await clickText('.cq-result-actions .btn', '再玩一次')
@@ -427,6 +439,7 @@ async function main() {
       await waitFor(`document.querySelector('.cq-result-title')`, 5000, '重开结算屏')
       const title = await textOf('.cq-result-title')
       if (!title.includes('闯关成功')) throw new Error(`全对仍未通关: ${title}`)
+      if ((await countOf('.cq-review')) !== 0) throw new Error('再玩一次全对后仍显示答错回顾')
       const prog = await evaluate(`JSON.parse(localStorage.getItem('kids-edu-progress') || '{}')`)
       const awarded = prog.quizAwarded ?? []
       if (!awarded.some((k) => k.startsWith('encyclopedia:'))) {
@@ -434,6 +447,47 @@ async function main() {
       }
       await clickText('.cq-result-actions .btn', '完成')
       await waitFor(`!document.querySelector('.cq-result')`, 3000, '关闭闯关弹层')
+    })
+
+    /* ================= 2b. 脑筋急转弯小挑战 / 静音兜底 ================= */
+    await step('脑筋急转弯小挑战：谜面 + 3 个谜底选项', async () => {
+      await go('brainteasers')
+      await waitFor(`document.querySelector('.challenge-banner')`, 8000, '脑筋急转弯挑战入口')
+      await clickAt('.challenge-banner', 0)
+      await waitFor(`document.querySelector('.cq-opt')`, 5000, '闯关弹层')
+
+      const ask = await textOf('.cq-ask')
+      if (!ask.includes('猜猜答案')) throw new Error(`引导语异常: ${ask}`)
+      const prompt = await textOf('.cq-prompt')
+      if (!prompt || !/[？?]$/.test(prompt)) throw new Error(`谜面未显示: ${prompt}`)
+      if ((await countOf('.cq-opt')) !== 3) throw new Error('谜底选项不是 3 个')
+      const blankOpt = await evaluate(
+        `[...document.querySelectorAll('.cq-opt-label')].some((el) => !el.textContent.trim())`
+      )
+      if (blankOpt) throw new Error('存在空的谜底选项')
+
+      await clickAt('.detail-card .close-btn', 0)
+      await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭挑战')
+    })
+
+    await step('静音兜底：挑战直接显示题目文字', async () => {
+      await go('encyclopedia')
+      await waitFor(`document.querySelector('.challenge-banner')`, 8000, '挑战入口')
+      await evaluate(`localStorage.setItem('kids-edu-muted', '1')`)
+      await send('Page.reload')
+      await waitFor(`document.querySelector('.challenge-banner')`, 10000, '静音后挑战入口')
+      await clickAt('.challenge-banner', 0)
+      await waitFor(`document.querySelector('.cq-opt')`, 5000, '静音闯关弹层')
+
+      const say = await textOf('.cq-say')
+      if (!say) throw new Error('静音时未显示题目文字')
+      if ((await countOf('.cq-replay')) !== 0) throw new Error('静音时仍显示重听按钮')
+
+      await clickAt('.detail-card .close-btn', 0)
+      await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭静音挑战')
+      await evaluate(`localStorage.setItem('kids-edu-muted', '0')`)
+      await send('Page.reload')
+      await waitFor(`document.querySelector('.challenge-banner')`, 10000, '恢复有声重新加载')
     })
 
     /* ================= 3. 数学练习 ================= */

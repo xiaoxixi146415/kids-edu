@@ -3,12 +3,14 @@ import { computed, onUnmounted, ref } from 'vue'
 import { brainteasers, type BrainTeaser } from '../data/brainteasers'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { buildRiddleQuiz, type RiddleUnit } from '../composables/useChallenge'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import AppIcon from '../components/AppIcon.vue'
 import ModuleLearnBar from '../components/ModuleLearnBar.vue'
+import ChallengeLauncher from '../components/ChallengeLauncher.vue'
 import { applyFilter } from '../utils'
 
 const MODULE = 'brainteasers'
@@ -30,6 +32,15 @@ const emptyText = computed(() => {
   if (filter.value === 'done') return '还没有猜过的题目，点上面的大卡片开动小脑瓜吧'
   return ''
 })
+
+/** 今日小挑战的题库：谜面 → 谜底（答案句子作选项） */
+const riddlePool = computed<RiddleUnit[]>(() =>
+  brainteasers.map((b) => ({ id: b.id, question: b.question, answer: b.answer }))
+)
+
+function buildChallenge() {
+  return buildRiddleQuiz(riddlePool.value, 5)
+}
 
 function open(item: BrainTeaser) {
   selected.value = item
@@ -56,6 +67,7 @@ onUnmounted(stop)
 <template>
   <div class="list-page">
     <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
+    <ChallengeLauncher module="brainteasers" label="脑筋急转弯" :build="buildChallenge" />
 
     <template v-if="items.length">
       <div class="grid">

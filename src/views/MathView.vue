@@ -114,6 +114,10 @@ onUnmounted(stop)
         </div>
 
         <div class="quiz-actions">
+          <button type="button" class="btn btn-ghost" @click="speak(quiz.spoken)">
+            <AppIcon name="play" />
+            听题
+          </button>
           <button type="button" class="btn btn-primary" @click="nextQuiz">
             <AppIcon name="book" />
             换一题

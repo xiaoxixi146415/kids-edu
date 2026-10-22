@@ -231,7 +231,24 @@
 - [x] `check:interactions` 14 → **18 项**：新增故事学情条+老牛配图、数学 10-20+筛选、路由回顶部、弹层焦点循环+inert。
 - [x] 修正测试脚本自身的一个坑：`clickText('.chip-btn', '学过')` 会先命中「没学过」，改为按 chip 索引点击。
 
+## 会话 17（2026-10-22）— 挑战覆盖 + 无障碍兜底 + 内容扩充
+
+- [x] 脑筋急转弯接入「今日小挑战」：新增 `buildRiddleQuiz`（`useChallenge.ts`），TTS 念谜面、3 个谜底选项；`BrainTeasersView` 加 `ChallengeLauncher`。此前只有百科/动物/识字/唐诗 4 个栏目可闯关。
+- [x] 挑战静音兜底：`QuizDialog` 在静音或设备无语音时直接显示题目文字（`.cq-say`），并隐藏无效的 🔊 重听按钮——此前没声音就无法作答听音题。
+- [x] 挑战无障碍：新增屏读可见的「第 x 题，共 y 题」（此前圆点与分数均 `aria-hidden`，读屏听不到进度）。
+- [x] 答错回顾：结算屏列出答错的题号、题面（唐诗上句/谜面）与正确谜底，方便家长带着复习；「再玩一次」会清空回顾。
+- [x] 数学「趣味练习」加「听题」按钮：进入页面自动读题后，可随时重听（此前只有「换一题」会朗读）。
+- [x] 唐诗：28 → **32 首**（望洞庭/九月九日忆山东兄弟/春日/竹石）。
+- [x] 绘本：9 → **10 篇**（新增《小壁虎借尾巴》5 页；鱼尾拨水、牛尾赶蝇、燕尾定向、壁虎尾再生均属实）。
+- [x] `HomeView.vue` 同步 tangshi 32 / stories 10。
+- [x] `check:interactions` 18 → **20 项**：新增脑筋急转弯挑战、静音兜底；挑战结算新增「答错回顾条数 = 5 − 答对数」断言。
+
 ## 测试结果
+- 会话 17：`npm run build`（vue-tsc -b && vite build）通过，PWA precache 33 条目。
+- 会话 17：`npm run check:counts` **10/10 一致**（tangshi 32 / stories 10 / math 21 / animals 50）。
+- 会话 17：preview-check **4/4 通过** —— 首页（10 卡 + SW）+ tangshi「望洞庭」/ stories「小壁虎借尾巴」/ brainteasers「今日小挑战」；各页 SW 已注册、控制台零错误。
+- 会话 17：`npm run check:interactions` **20/20 通过**，控制台零错误；含脑筋急转弯谜面/3 选项、静音题目文字、答错回顾条数。
+- 会话 17：源码 grep `*.vue` 硬编码 hex = **0**；10 个数据文件 id 无重复。
 - 会话 16 补充：`npm run build`（vue-tsc -b && vite build）通过，86 modules，834ms；PWA precache 33 条目。
 - 会话 16 补充：`npm run check:counts` **10/10 一致**（tangshi 28 / math 21 / animals 50）。
 - 会话 16 补充：preview-check **5/5 通过** —— 首页 + stories「小马过河」/ math「二十」/ animals「海象」/ tangshi「所见」；各页 SW 已注册、控制台零错误。

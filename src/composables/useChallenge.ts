@@ -6,6 +6,7 @@
  * - buildPickQuiz   听音认物：TTS 念名称，从 3 个大选项里点出对应项
  *                    （百科/动物 展示 emoji+名字；识字 只展示大汉字 → variant='chars'）
  * - buildCoupletQuiz 接下一句：展示上一句，从 3 句里选下一句（唐诗）
+ * - buildRiddleQuiz 猜谜语：TTS 念谜面，从 3 个谜底里选出正确的一个（脑筋急转弯）
  */
 export interface QuizOption {
   /** 可空：识字等纯文字题没有 emoji */
@@ -40,6 +41,13 @@ export interface PickUnit {
 export interface CoupletUnit {
   id: string
   lead: string
+  answer: string
+}
+
+/** 猜谜题的条目单元 */
+export interface RiddleUnit {
+  id: string
+  question: string
   answer: string
 }
 
@@ -116,6 +124,35 @@ export function buildCoupletQuiz(pool: CoupletUnit[], size = 5): QuizQuestion[] 
       ask: '哪一句是下一句？',
       say: `${target.lead}。`,
       show: target.lead,
+      variant: 'list',
+      options,
+      answer: options.findIndex((o) => o.label === target.answer),
+    })
+  }
+  return questions
+}
+
+/**
+ * 猜谜题：TTS 念谜面，选项为 3 个「谜底」候选（其他谜语的答案）。
+ * variant='list'：谜底是完整句子，单列排布更好读。
+ */
+export function buildRiddleQuiz(pool: RiddleUnit[], size = 5): QuizQuestion[] {
+  const questions: QuizQuestion[] = []
+  for (const i of takeIndexes(pool.length, size)) {
+    const target = pool[i]
+    const distractors: string[] = []
+    for (const other of shuffle(pool)) {
+      if (distractors.length >= 2) break
+      if (other.id === target.id) continue
+      if (other.answer === target.answer || distractors.includes(other.answer)) continue
+      distractors.push(other.answer)
+    }
+    if (distractors.length < 2) continue
+    const options = shuffle([target.answer, ...distractors]).map((label) => ({ label }))
+    questions.push({
+      ask: '听一听谜面，猜猜答案是什么？',
+      say: target.question,
+      show: target.question,
       variant: 'list',
       options,
       answer: options.findIndex((o) => o.label === target.answer),

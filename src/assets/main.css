@@ -878,6 +878,10 @@ button {
 }
 
 .quiz-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-top: 20px;
 }
 
@@ -1466,6 +1470,18 @@ button {
   color: var(--color-ink);
 }
 
+/* 静音 / 无语音时的题目文字兜底 */
+.cq-say {
+  margin-top: 12px;
+  padding: 10px var(--space-5);
+  border-radius: 18px;
+  background: var(--color-neutral-bg);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
 .cq-options {
   display: grid;
   gap: 12px;
@@ -1610,6 +1626,44 @@ button {
   font-size: 17px;
   font-weight: 700;
   color: var(--color-text-secondary);
+}
+
+/* 答错回顾 */
+.cq-review {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 18px;
+  background: var(--color-neutral-bg);
+  text-align: left;
+}
+
+.cq-review-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-neutral-text);
+}
+
+.cq-review-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cq-review-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.cq-review-a {
+  color: var(--color-correct-deep);
 }
 
 .cq-result-actions {
