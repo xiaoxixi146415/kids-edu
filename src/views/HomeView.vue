@@ -3,13 +3,16 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useAchievements } from '../composables/useAchievements'
 import { CATEGORIES, type Category } from '../data/categories'
 import BigCard from '../components/BigCard.vue'
 import AppIcon from '../components/AppIcon.vue'
+import BadgeShelf from '../components/BadgeShelf.vue'
 
 const router = useRouter()
 const { speak, unlock, unlocked, supported } = useSpeech()
 const { stars, streak, todayCount, dailyGoal, todayDone, learnedCount, last } = useProgress()
+const { achievements } = useAchievements()
 
 /** 某栏目已学数量（内容更新后旧 id 可能残留，展示时按总量截断） */
 function learnedOf(c: Category): number {
@@ -115,6 +118,8 @@ function continueLearn(cat: Category) {
     <p v-if="overallLearned > 0" class="overall-line" role="status">
       🎓 已认识 <b>{{ overallLearned }}</b> / {{ overallTotal }} 个内容，继续加油！
     </p>
+
+    <BadgeShelf :badges="achievements" variant="home" />
 
     <!-- 继续学习 -->
     <BigCard

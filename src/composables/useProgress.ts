@@ -94,6 +94,8 @@ interface Persisted {
   todayKeys: string[]
   /** 今日已闯关成功的栏目（每次只算一天，日期切换即清） */
   quizAwarded: string[]
+  /** 累计闯关成功次数（徽章用，不受 14 天历史裁剪影响） */
+  quizTotal: number
   /** 最近打开的条目 */
   last?: LastEntry | null
   /** 按天统计（YYYY-MM-DD → DayStat） */
@@ -111,6 +113,7 @@ const streak = ref(0)
 const todayKeys = ref<string[]>([])
 const lastDate = ref('')
 const quizAwarded = ref<string[]>([])
+const quizTotal = ref(0)
 const lastEntry = ref<LastEntry | null>(null)
 const history = ref<Record<string, DayStat>>({})
 const wrong = ref<Record<string, WrongEntry[]>>({})
@@ -133,10 +136,11 @@ function persist() {
     lastDate: lastDate.value,
     todayKeys: todayKeys.value,
     quizAwarded: quizAwarded.value,
+    quizTotal: quizTotal.value,
     last: lastEntry.value,
     history: history.value,
     wrong: wrong.value,
-    v: 3,
+    v: 4,
   }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
@@ -218,6 +222,7 @@ function load() {
     learned.value = safeKeys(data.learned)
     streak.value = safeInt(data.streak)
     lastDate.value = typeof data.lastDate === 'string' ? data.lastDate : ''
+    quizTotal.value = safeInt(data.quizTotal)
     lastEntry.value = safeLast(data.last)
     history.value = safeHistory(data.history)
     wrong.value = safeWrong(data.wrong)
@@ -252,6 +257,7 @@ function load() {
     todayKeys.value = []
     lastDate.value = ''
     quizAwarded.value = []
+    quizTotal.value = 0
     lastEntry.value = null
     history.value = {}
     wrong.value = {}
@@ -337,6 +343,8 @@ function passQuiz(module: string): boolean {
   // 与普通学习一样计入今日进度（用独立前缀，避免与条目 key 混淆）
   touchToday(`quiz:${key}`)
   addHistory('quiz')
+  // 累计次数用于「闯关小达人」徽章；每天重复通关也计入，但星星仍只给一次
+  quizTotal.value += 1
 
   if (fresh) {
     quizAwarded.value = [...quizAwarded.value, key]
@@ -449,6 +457,7 @@ function reset() {
   streak.value = 0
   todayKeys.value = []
   quizAwarded.value = []
+  quizTotal.value = 0
   // 置空而不是置为今天：下一次学习时 rollDay 会从 1 天连续开始
   lastDate.value = ''
   todayCount.value = 0
@@ -484,6 +493,8 @@ export function useProgress() {
     history: readonly(history),
     /** 各栏目错题（只读） */
     wrong: readonly(wrong),
+    /** 累计闯关成功次数 */
+    quizTotal: readonly(quizTotal),
     /** 记录一次学习，返回是否首次（新得星） */
     learn,
     /** 记住最近打开的条目（未学完也能续上） */

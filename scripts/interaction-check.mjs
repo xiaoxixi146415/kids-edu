@@ -15,6 +15,7 @@
 //  10. PWA：离线冷启动 + 离线懒加载栏目
 //  11. 家长报告 / 首页续学直达条目 / 错题优先出题 / 两步确认清空
 //  12. 年龄筛选（数学 / 拼音 / 安静书）/ 拼音声调与易混分组 / 数学分步提示
+//  13. 成长徽章 / 近 7 天趋势图 / 复制本周小结
 //
 // 用法（先 npm run build）：
 //   npm run check:interactions
@@ -415,6 +416,9 @@ async function main() {
 
     /* ================= 2. 今日小挑战 ================= */
     await step('今日小挑战：5 题作答 → 纠正 → 结算', async () => {
+      const quizBefore = await evaluate(
+        `(JSON.parse(localStorage.getItem('kids-edu-progress') || '{}').quizTotal) ?? 0`
+      )
       await go('encyclopedia')
       await waitFor(`document.querySelector('.challenge-banner')`, 8000, '挑战入口')
       await clickAt('.challenge-banner', 0)
@@ -492,6 +496,10 @@ async function main() {
       const awarded = prog.quizAwarded ?? []
       if (!awarded.some((k) => k.startsWith('encyclopedia:'))) {
         throw new Error('未写入 encyclopedia 当日闯关记录')
+      }
+      // 累计闯关次数用于「闯关小达人」徽章：每次通关（含同一天再玩）都要 +1
+      if ((prog.quizTotal ?? 0) <= quizBefore) {
+        throw new Error(`通关后累计闯关次数未增加: ${prog.quizTotal ?? 0}`)
       }
       await clickText('.cq-result-actions .btn', '完成')
       await waitFor(`!document.querySelector('.cq-result')`, 3000, '关闭闯关弹层')
@@ -1033,7 +1041,8 @@ async function main() {
             },
           ],
         },
-        v: 3,
+        quizTotal: 12,
+        v: 4,
       })
       try {
         await evaluate(`localStorage.setItem('kids-edu-progress', ${JSON.stringify(seed)})`)
@@ -1062,6 +1071,41 @@ async function main() {
         const summary = await textOf('.parent-week-summary')
         if (!summary.includes('5 条') || !summary.includes('3 颗星') || !summary.includes('1 次')) {
           throw new Error(`近 7 天汇总异常: ${summary}`)
+        }
+
+        /* —— 趋势图：7 列 + 完整可访问汇总 —— */
+        if ((await countOf('.trend-col')) !== 7) throw new Error('趋势图不是 7 列')
+        const trendLabel = await evaluate(
+          `document.querySelector('.trend-chart')?.getAttribute('aria-label') ?? ''`
+        )
+        if (
+          !trendLabel.includes('今天 学习 3 条、得星 2 颗') ||
+          !trendLabel.includes('昨天 学习 2 条、得星 1 颗')
+        ) {
+          throw new Error(`趋势图可访问文案异常: ${trendLabel}`)
+        }
+
+        /* —— 成长徽章：星星 / 连续 3 天 / 闯关 10 次 共 3 枚 —— */
+        if ((await countOf('.badge')) !== 7) throw new Error('徽章数量不是 7 枚')
+        if ((await countOf('.badge-on')) !== 3) throw new Error('已获得徽章数量异常')
+        const badgeCount = await textOf('.badge-shelf-count')
+        if (badgeCount !== '3/7') throw new Error(`徽章计数异常: ${badgeCount}`)
+        if (!(await textOf('.badge-list')).includes('3/10')) {
+          throw new Error('未获得徽章缺少进度提示')
+        }
+
+        /* —— 复制本周小结：剪贴板成功或回退文字版，都要有反馈 —— */
+        await clickAt('.report-copy', 0)
+        await waitFor(`document.querySelector('.report-copy-status')`, 3000, '复制反馈')
+        const copyStatus = await textOf('.report-copy-status')
+        if (!copyStatus.includes('复制')) throw new Error(`复制反馈异常: ${copyStatus}`)
+        const report = await textOf('.report-text')
+        if (!report.includes('宝宝乐园 · 学习周报')) throw new Error('文字版小结缺少标题')
+        if (!report.includes('本周学习 5 条，得星 3 颗，闯关 1 次')) {
+          throw new Error(`文字版小结汇总异常: ${report.slice(0, 80)}`)
+        }
+        if (!report.includes(`数学启蒙：2/${moduleTotals.math}`)) {
+          throw new Error('文字版小结缺少数学进度')
         }
 
         if ((await countOf('.parent-module')) !== 10) throw new Error('栏目完成度不是 10 项')
@@ -1184,7 +1228,8 @@ async function main() {
         wrong: {
           math: [{ id: 'num-1', at: 1000, prompt: '', answer: '一' }],
         },
-        v: 3,
+        quizTotal: 5,
+        v: 4,
       })
       try {
         await evaluate(`localStorage.setItem('kids-edu-progress', ${JSON.stringify(seed)})`)
@@ -1211,12 +1256,13 @@ async function main() {
         if ((prog.learned ?? []).length) throw new Error('清空后仍有已学记录')
         if ((prog.stars ?? 0) !== 0) throw new Error('清空后星星不为 0')
         if (prog.last != null) throw new Error('清空后仍保留最近条目')
+        if ((prog.quizTotal ?? 0) !== 0) throw new Error('清空后累计闯关次数不为 0')
         if (Object.keys(prog.wrong ?? {}).length) throw new Error('清空后仍保留错题')
         if (Object.keys(prog.history ?? {}).length) throw new Error('清空后仍保留按天历史')
         if ((await evaluate(`localStorage.getItem('kids-edu-last')`)) !== null) {
           throw new Error('清空后仍保留旧版续学路径')
         }
-        if (!(await textOf('.parent-empty')).includes('还没有答错的题')) {
+        if (!(await textOf('#parent-wrong-title ~ .parent-empty')).includes('还没有答错的题')) {
           throw new Error('清空后错题区没有空状态')
         }
 
@@ -1224,6 +1270,9 @@ async function main() {
         await waitFor(`document.querySelector('.category-list')`, 8000, '首页')
         if (await evaluate(`!!document.querySelector('.continue-card')`)) {
           throw new Error('清空后首页仍显示继续学习')
+        }
+        if ((await textOf('.badge-shelf-count')) !== '0/7') {
+          throw new Error('清空后首页徽章未归零')
         }
       } finally {
         await evaluate(

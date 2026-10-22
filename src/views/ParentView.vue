@@ -12,9 +12,12 @@ import { computed, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { CATEGORIES } from '../data/categories'
 import { useProgress, type WrongEntry } from '../composables/useProgress'
+import { useAchievements } from '../composables/useAchievements'
+import BadgeShelf from '../components/BadgeShelf.vue'
 
 const router = useRouter()
 const { stars, streak, todayCount, dailyGoal, learnedCount, recentDays, wrong, reset } = useProgress()
+const { achievements } = useAchievements()
 
 const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
@@ -71,6 +74,80 @@ function openWrong(module: string, path: string, id: string) {
   router.push({ path, query: { open: entryId(module, id) } })
 }
 
+/* —— 近 7 天趋势：与下方文字列表同源，图只是更好看，读屏仍能听到完整汇总 —— */
+const chartDays = computed(() =>
+  [...days.value].reverse().map((d) => {
+    const idx = days.value.findIndex((x) => x.date === d.date)
+    const dt = new Date(`${d.date}T00:00:00`)
+    return {
+      ...d,
+      label: dayLabel(d.date, idx),
+      short: idx === 0 ? '今天' : `${dt.getMonth() + 1}/${dt.getDate()}`,
+    }
+  })
+)
+const weekHasData = computed(
+  () => weekLearned.value > 0 || weekStars.value > 0 || weekQuiz.value > 0
+)
+const trendMax = computed(() =>
+  Math.max(1, ...days.value.map((d) => Math.max(d.learned, d.stars)))
+)
+function barHeight(v: number): string {
+  return `${Math.round((v / trendMax.value) * 100)}%`
+}
+const trendSummary = computed(
+  () =>
+    '近 7 天学习趋势：' +
+    chartDays.value.map((d) => `${d.label} 学习 ${d.learned} 条、得星 ${d.stars} 颗`).join('；') +
+    '。'
+)
+
+/* —— 复制本周小结：只导出本机已有统计，不联网 —— */
+function monthDay(date: string): string {
+  const d = new Date(`${date}T00:00:00`)
+  return `${d.getMonth() + 1}月${d.getDate()}日`
+}
+
+const reportText = computed(() => {
+  const list = days.value
+  const range = `${monthDay(list[list.length - 1].date)}—${monthDay(list[0].date)}`
+  const out = [
+    `宝宝乐园 · 学习周报（${range}）`,
+    '',
+    `本周学习 ${weekLearned.value} 条，得星 ${weekStars.value} 颗，闯关 ${weekQuiz.value} 次`,
+    `连续打卡 ${streak.value} 天`,
+    `已认识 ${overallLearned.value} / ${overallTotal.value} 个内容`,
+  ]
+  if (weekHasData.value) {
+    out.push('', '各栏目进度：')
+    for (const m of modules.value) out.push(`${m.title}：${m.learned}/${m.total}`)
+  } else {
+    out.push('', '这周还没有学习记录，从今天开始一起读一个故事吧。')
+  }
+  if (wrongCount.value) {
+    out.push('', `还有 ${wrongCount.value} 道答错的题，可以在家长报告里回看。`)
+  }
+  out.push('', '（记录只保存在这台设备上）')
+  return out.join('\n')
+})
+
+const copyMsg = ref('')
+const reportDetails = ref<HTMLDetailsElement | null>(null)
+let copyTimer: number | undefined
+
+async function copyReport() {
+  window.clearTimeout(copyTimer)
+  try {
+    await navigator.clipboard.writeText(reportText.value)
+    copyMsg.value = '已复制，可以粘贴到微信里发给家人'
+  } catch {
+    // 没有剪贴板权限 / 非安全上下文：展开文字版，让家长手动选中复制
+    if (reportDetails.value) reportDetails.value.open = true
+    copyMsg.value = '浏览器没有允许自动复制，请展开下面的文字版手动复制'
+  }
+  copyTimer = window.setTimeout(() => (copyMsg.value = ''), 8000)
+}
+
 /* —— 清空学习记录：两步确认，防幼儿误触 —— */
 const armed = ref(false)
 const resetMsg = ref('')
@@ -92,7 +169,10 @@ function askReset() {
   resetMsg.value = '学习记录已经清空，可以从头开始啦'
 }
 
-onUnmounted(() => window.clearTimeout(armTimer))
+onUnmounted(() => {
+  window.clearTimeout(armTimer)
+  window.clearTimeout(copyTimer)
+})
 </script>
 
 <template>
@@ -121,10 +201,36 @@ onUnmounted(() => window.clearTimeout(armTimer))
         近 7 天学了 <b>{{ weekLearned }}</b> 条，得 <b>{{ weekStars }}</b> 颗星，闯关
         <b>{{ weekQuiz }}</b> 次
       </p>
+      <div class="report-actions">
+        <button type="button" class="btn btn-ghost report-copy" @click="copyReport">
+          <span aria-hidden="true">📋</span> 复制本周小结
+        </button>
+      </div>
+      <p v-if="copyMsg" class="report-copy-status" role="status">{{ copyMsg }}</p>
+      <details ref="reportDetails" class="report-details">
+        <summary>查看文字版小结</summary>
+        <pre class="report-text">{{ reportText }}</pre>
+      </details>
     </section>
+
+    <BadgeShelf :badges="achievements" variant="parent" />
 
     <section class="parent-card" aria-labelledby="parent-week-title">
       <h2 id="parent-week-title" class="parent-section-title">近 7 天</h2>
+      <div v-if="weekHasData" class="trend-chart" role="img" :aria-label="trendSummary">
+        <div v-for="d in chartDays" :key="d.date" class="trend-col" aria-hidden="true">
+          <div class="trend-bars">
+            <span class="trend-bar trend-bar-learn" :style="{ height: barHeight(d.learned) }"></span>
+            <span class="trend-bar trend-bar-star" :style="{ height: barHeight(d.stars) }"></span>
+          </div>
+          <span class="trend-day">{{ d.short }}</span>
+        </div>
+      </div>
+      <p v-else class="parent-empty">这 7 天还没有记录，今天读一个故事就会出现在这里。</p>
+      <p v-if="weekHasData" class="trend-legend" aria-hidden="true">
+        <span class="trend-key trend-key-learn"></span>学习条数
+        <span class="trend-key trend-key-star"></span>得星
+      </p>
       <ul class="parent-week">
         <li v-for="(d, i) in days" :key="d.date">
           <span class="parent-week-day">{{ dayLabel(d.date, i) }}</span>
