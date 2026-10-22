@@ -11,6 +11,7 @@
  */
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useSpeech } from '../composables/useSpeech'
+import { useProgress } from '../composables/useProgress'
 import { passThreshold, type QuizQuestion } from '../composables/useChallenge'
 import DetailDialog from './DetailDialog.vue'
 
@@ -19,13 +20,16 @@ const props = withDefaults(
     open: boolean
     questions: QuizQuestion[]
     tone?: string
+    /** 所属栏目：答错的题写进该栏目错题本 */
+    module?: string
   }>(),
-  { tone: 'detail-settings' }
+  { tone: 'detail-settings', module: '' }
 )
 
 const emit = defineEmits<{ (e: 'close'): void; (e: 'finish', score: number, total: number): void }>()
 
 const { speak, stop, muted, canSpeak } = useSpeech()
+const { recordWrong, clearWrong } = useProgress()
 
 const index = ref(0)
 const score = ref(0)
@@ -120,16 +124,27 @@ function choose(i: number) {
     feedback.value = '答对啦，真棒！'
     fbOk.value = true
     speak('答对啦，真棒！')
+    // 以前答错过的题这次答对了：从错题本移出
+    if (props.module && q.value.refId) clearWrong(props.module, q.value.refId)
   } else {
     feedback.value = '再想一想～'
     fbOk.value = false
     speak('再想一想，听一听。')
+    const answer = q.value.options[q.value.answer]?.label ?? ''
+    // 写进栏目错题本：家长报告能看到「哪里卡住」，下次挑战也优先复习
+    if (props.module && q.value.refId) {
+      recordWrong(props.module, {
+        id: q.value.refId,
+        prompt: q.value.show ?? '',
+        answer,
+      })
+    }
     missed.value = [
       ...missed.value,
       {
         n: index.value + 1,
         prompt: q.value.show ?? '',
-        answer: q.value.options[q.value.answer]?.label ?? '',
+        answer,
       },
     ]
     revealTimer = window.setTimeout(() => {

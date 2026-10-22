@@ -88,6 +88,7 @@ onUnmounted(stop)
   <QuizDialog
     :open="open"
     :questions="questions"
+    :module="module"
     tone="detail-settings"
     @close="open = false"
     @finish="onFinish"

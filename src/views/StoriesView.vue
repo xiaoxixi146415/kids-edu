@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { stories, type Story } from '../data/stories'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
@@ -11,7 +12,7 @@ import AppIcon from '../components/AppIcon.vue'
 
 const MODULE = 'stories'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember } = useProgress()
 const current = ref<Story | null>(null)
 const page = ref(0)
 const filter = ref<LearnFilter>('all')
@@ -27,6 +28,7 @@ const isLast = computed(
 function open(s: Story) {
   current.value = s
   page.value = 0
+  remember(MODULE, s.id)
   // 单页绘本打开即读完；多页需翻到最后一页才计入
   if (s.pages.length <= 1) learn(MODULE, s.id)
   speak(s.pages[0].text)
@@ -55,6 +57,8 @@ function readCurrent() {
   if (!current.value) return
   speak(current.value.pages[page.value].text)
 }
+
+useResume(stories, (s) => s.id, open)
 
 onUnmounted(stop)
 </script>

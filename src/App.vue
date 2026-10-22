@@ -34,7 +34,7 @@ watch(
   (path, prev) => {
     // 从栏目回到首页（含浏览器后退/手势返回）：立即静音，不等页面过渡结束
     if (path === '/' && prev && prev !== '/') stop()
-    if (path !== '/') {
+    if (path !== '/' && path !== '/parent') {
       try {
         localStorage.setItem('kids-edu-last', path)
       } catch {

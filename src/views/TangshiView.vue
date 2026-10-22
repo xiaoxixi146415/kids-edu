@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { tangshi, type Tangshi } from '../data/tangshi'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import { buildCoupletQuiz, type CoupletUnit } from '../composables/useChallenge'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
@@ -14,7 +15,7 @@ import { applyFilter } from '../utils'
 
 const MODULE = 'tangshi'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember, challengePrefs } = useProgress()
 const selected = ref<Tangshi | null>(null)
 const showMeaning = ref(false)
 
@@ -43,9 +44,11 @@ const coupletPool = computed<CoupletUnit[]>(() =>
   })
 )
 
-/** 今日小挑战：展示上一句，选对下一句 */
+/** 今日小挑战：展示上一句，选对下一句（诗句 id 形如 `poemId:句下标`） */
 function buildChallenge() {
-  return buildCoupletQuiz(coupletPool.value, 5)
+  const pool = coupletPool.value
+  const prefs = challengePrefs(MODULE, pool.map((u) => u.id), (id) => id.split(':')[0])
+  return buildCoupletQuiz(pool, 5, prefs)
 }
 
 function poemText(item: Tangshi) {
@@ -55,6 +58,7 @@ function poemText(item: Tangshi) {
 function open(item: Tangshi) {
   selected.value = item
   showMeaning.value = false
+  remember(MODULE, item.id)
   learn(MODULE, item.id)
   speak(poemText(item))
 }
@@ -69,6 +73,8 @@ function close() {
   stop()
   selected.value = null
 }
+
+useResume(tangshi, (t) => t.id, open)
 
 onUnmounted(stop)
 </script>

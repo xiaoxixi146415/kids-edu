@@ -384,6 +384,192 @@ button {
   min-height: 96px;
 }
 
+/* ===== 家长报告 ===== */
+.parent-page {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.parent-card {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow-sm);
+}
+
+.parent-section-title {
+  font-size: 23px;
+  font-weight: 800;
+  color: var(--color-ink);
+}
+
+.parent-lead {
+  margin-top: var(--space-2);
+  font-size: 17px;
+  line-height: var(--text-line);
+  color: var(--color-text-secondary);
+}
+
+.parent-stats {
+  justify-content: flex-start;
+  margin-top: var(--space-3);
+}
+
+.parent-week-summary {
+  margin-top: var(--space-3);
+  font-size: var(--text-label);
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.parent-week-summary b {
+  color: var(--color-info);
+}
+
+.parent-week {
+  margin-top: var(--space-2);
+  list-style: none;
+}
+
+.parent-week li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  padding: 10px 0;
+  border-bottom: 2px solid var(--color-border-soft);
+}
+
+.parent-week li:last-child {
+  border-bottom: none;
+}
+
+.parent-week-day {
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: var(--color-on-surface);
+}
+
+.parent-week-nums {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.parent-week-nums b {
+  color: var(--color-info);
+}
+
+.parent-module {
+  margin-top: var(--space-3);
+}
+
+.parent-module-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.parent-module-name {
+  font-size: var(--text-label);
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.parent-module-count {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-info);
+}
+
+.parent-module .progress-track {
+  margin-top: 6px;
+}
+
+.parent-empty {
+  margin-top: var(--space-3);
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.parent-wrong-group {
+  margin-top: var(--space-4);
+}
+
+.parent-mistake-module {
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: var(--color-on-surface);
+}
+
+.parent-mistakes {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  list-style: none;
+}
+
+.parent-mistake-btn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 2px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  transition: transform var(--duration-fast) ease;
+}
+
+.parent-mistake-btn:active {
+  transform: scale(0.98);
+}
+
+.parent-mistake-q {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.parent-mistake-a {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-correct-deep);
+}
+
+.parent-reset {
+  margin-top: var(--space-3);
+}
+
+/* 首页底部的家长入口：低调、不抢孩子的注意力 */
+.parent-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin: var(--space-5) auto var(--space-2);
+  padding: 8px 22px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: var(--shadow-sm);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.parent-link:hover {
+  text-decoration: underline;
+}
+
 /* ===== 得星飘星奖励 ===== */
 .reward-toast {
   position: fixed;

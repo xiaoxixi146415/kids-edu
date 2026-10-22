@@ -15,6 +15,7 @@ import { quietbook } from '../data/quietbook'
 import type { QbOption, QbRound } from '../data/quietbook'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useOpenParam } from '../composables/useResume'
 
 const MODULE = 'quietbook'
 const CN = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
@@ -23,10 +24,13 @@ const REMEMBER_MS = 4500
 
 const router = useRouter()
 const { speak, stop } = useSpeech()
-const { learn, isLearned } = useProgress()
+const { learn, isLearned, remember } = useProgress()
 
 const total = quietbook.length
-const pageIndex = ref(0)
+// 首页「继续学习」直达上次玩的那一页：挂载前先定好页码，避免先播第 1 页再跳页
+const { openId, clear } = useOpenParam()
+const resumeIndex = openId ? quietbook.findIndex((p) => p.id === openId) : -1
+const pageIndex = ref(resumeIndex >= 0 ? resumeIndex : 0)
 const roundIndex = ref(0)
 /** 当前是否正在玩（false = 整页完成，展示庆祝） */
 const playing = ref(true)
@@ -116,6 +120,8 @@ function openPage() {
   resetRound()
   playing.value = true
   fresh.value = false
+  // 翻到哪页就记哪页：没玩完也能从首页继续
+  remember(MODULE, page.value.id)
   const first = page.value.rounds[0]
   nextTick(() => {
     speak(`${page.value.intro}${first?.ask ?? ''}`)
@@ -319,6 +325,7 @@ function nextPageFromDone() {
 onMounted(() => {
   // 进页面先念引导语（来自首页点卡的手势，浏览器允许发声），再走首回合
   openPage()
+  if (openId) clear()
 })
 
 onUnmounted(() => {

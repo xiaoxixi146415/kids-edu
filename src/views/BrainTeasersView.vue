@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { brainteasers, type BrainTeaser } from '../data/brainteasers'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import { buildRiddleQuiz, type RiddleUnit } from '../composables/useChallenge'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
@@ -15,7 +16,7 @@ import { applyFilter } from '../utils'
 
 const MODULE = 'brainteasers'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember, challengePrefs } = useProgress()
 const selected = ref<BrainTeaser | null>(null)
 const showAnswer = ref(false)
 
@@ -39,12 +40,15 @@ const riddlePool = computed<RiddleUnit[]>(() =>
 )
 
 function buildChallenge() {
-  return buildRiddleQuiz(riddlePool.value, 5)
+  const pool = riddlePool.value
+  const prefs = challengePrefs(MODULE, pool.map((u) => u.id))
+  return buildRiddleQuiz(pool, 5, prefs)
 }
 
 function open(item: BrainTeaser) {
   selected.value = item
   showAnswer.value = false
+  remember(MODULE, item.id)
   speak(item.question)
 }
 
@@ -60,6 +64,8 @@ function close() {
   stop()
   selected.value = null
 }
+
+useResume(brainteasers, (b) => b.id, open)
 
 onUnmounted(stop)
 </script>

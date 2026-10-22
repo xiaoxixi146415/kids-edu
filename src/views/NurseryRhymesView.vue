@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { nurseryRhymes, type NurseryRhyme } from '../data/nursery'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
@@ -12,7 +13,7 @@ import { groupBy, applyFilter } from '../utils'
 
 const MODULE = 'nursery'
 const { speak, speakLines, stop, muted, supported } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember } = useProgress()
 const selected = ref<NurseryRhyme | null>(null)
 /** 当前正在看/唱的句下标 */
 const active = ref(0)
@@ -42,6 +43,7 @@ function open(r: NurseryRhyme) {
   active.value = 0
   playing.value = false
   showTip.value = false
+  remember(MODULE, r.id)
   speak(r.lines[0].text)
 }
 
@@ -138,6 +140,8 @@ function toggleTip() {
 watch(muted, (m) => {
   if (m) stopPlaying()
 })
+
+useResume(nurseryRhymes, (r) => r.id, open)
 
 onUnmounted(() => {
   if (silentTimer) window.clearInterval(silentTimer)

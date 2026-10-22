@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { animals, type AnimalItem } from '../data/animals'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import { buildPickQuiz } from '../composables/useChallenge'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
@@ -14,7 +15,7 @@ import { applyFilter, groupBy } from '../utils'
 
 const MODULE = 'animals'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember, challengePrefs } = useProgress()
 const selected = ref<AnimalItem | null>(null)
 
 const filter = ref<LearnFilter>('all')
@@ -31,13 +32,11 @@ const emptyText = computed(() => {
   return ''
 })
 
-/** 今日小挑战：听名字 → 从 3 只动物里选对 */
+/** 今日小挑战：听名字 → 从 3 只动物里选对（优先没学过的，混入最多 2 道错题） */
 function buildChallenge() {
-  return buildPickQuiz(
-    animals.map((a) => ({ id: a.id, label: a.name, emoji: a.emoji })),
-    5,
-    'grid'
-  )
+  const pool = animals.map((a) => ({ id: a.id, label: a.name, emoji: a.emoji }))
+  const prefs = challengePrefs(MODULE, pool.map((u) => u.id))
+  return buildPickQuiz(pool, 5, 'grid', prefs)
 }
 
 function read(item: AnimalItem) {
@@ -46,6 +45,7 @@ function read(item: AnimalItem) {
 
 function open(item: AnimalItem) {
   selected.value = item
+  remember(MODULE, item.id)
   learn(MODULE, item.id)
   speak(read(item))
 }
@@ -54,6 +54,8 @@ function close() {
   stop()
   selected.value = null
 }
+
+useResume(animals, (a) => a.id, open)
 
 onUnmounted(stop)
 </script>

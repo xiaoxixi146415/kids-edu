@@ -13,11 +13,12 @@
 //   8. 路由标题与焦点 / 未知地址回首页 / 学情数据容错
 //   9. 弹层焦点循环 + 背景 inert + body 滚动锁
 //  10. PWA：离线冷启动 + 离线懒加载栏目
+//  11. 家长报告 / 首页续学直达条目 / 错题优先出题 / 两步确认清空
 //
 // 用法（先 npm run build）：
 //   npm run check:interactions
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -27,6 +28,21 @@ const PREVIEW_PORT = 4600 + Math.floor(Math.random() * 400)
 const CDP_PORT = 9100 + Math.floor(Math.random() * 300)
 const HOST = '127.0.0.1'
 const BASE = `http://${HOST}:${PREVIEW_PORT}/`
+
+/** 本地时区 YYYY-MM-DD，offset 为相对今天的天数 */
+function dateKey(offset = 0) {
+  const d = new Date()
+  d.setDate(d.getDate() + offset)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+/** 从源码读取脑筋急转弯 id，用于「全部学过 + 只剩错题」的个性化测试 */
+const brainteaserIds = [
+  ...readFileSync(path.join(ROOT, 'src', 'data', 'brainteasers.ts'), 'utf8').matchAll(
+    /id:\s*'([^']+)'/g
+  ),
+].map((m) => m[1])
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -815,6 +831,342 @@ async function main() {
         await send('Page.reload')
         await sleep(800)
         await waitFor(`document.querySelectorAll('.big-card').length >= 10`, 10000, '恢复学情数据')
+      }
+    })
+
+    /* ================= 5b. 家长报告 / 续学 / 个性化 ================= */
+    const seedRaw = await evaluate(`localStorage.getItem('kids-edu-progress')`)
+    const seedLast = await evaluate(`localStorage.getItem('kids-edu-last')`)
+
+    await step('续学：首页继续卡直达最近条目，地址参数自动清理', async () => {
+      const today = dateKey()
+      const seed = JSON.stringify({
+        stars: 5,
+        learned: ['math:num-1'],
+        streak: 1,
+        lastDate: today,
+        todayKeys: ['math:num-1'],
+        quizAwarded: [],
+        last: { module: 'math', id: 'num-7' },
+        history: {},
+        wrong: {},
+        v: 3,
+      })
+      try {
+        await evaluate(`localStorage.setItem('kids-edu-progress', ${JSON.stringify(seed)})`)
+        await evaluate(`localStorage.setItem('kids-edu-last', '/math')`)
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelector('.continue-card')`, 10000, '首页继续卡')
+        const sub = await textOf('.continue-card .card-subtitle')
+        if (!sub.includes('数学启蒙')) throw new Error(`继续卡栏目异常: ${sub}`)
+
+        await clickAt('.continue-card', 0)
+        await waitFor(
+          `location.hash.includes('/math') && location.hash.includes('open=num-7')`,
+          5000,
+          '续学地址'
+        )
+        await waitFor(`document.querySelector('.detail-overlay')`, 5000, '续学详情')
+        if ((await textOf('.num-big')) !== '7') throw new Error('续学没有打开 num-7')
+        await waitFor(`!location.hash.includes('open=')`, 5000, '清除续学参数')
+        // 清理参数属于同路径导航，不应把焦点从详情弹层抢回 main
+        const focusInside = await evaluate(
+          `document.querySelector('.detail-overlay')?.contains(document.activeElement) === true`
+        )
+        if (!focusInside) throw new Error('清理参数后焦点被抢回主内容')
+
+        await clickAt('.detail-card .close-btn', 0)
+        await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭续学详情')
+      } finally {
+        await evaluate(
+          seedRaw === null
+            ? `localStorage.removeItem('kids-edu-progress')`
+            : `localStorage.setItem('kids-edu-progress', ${JSON.stringify(seedRaw)})`
+        )
+        await evaluate(
+          seedLast === null
+            ? `localStorage.removeItem('kids-edu-last')`
+            : `localStorage.setItem('kids-edu-last', ${JSON.stringify(seedLast)})`
+        )
+      }
+    })
+
+    await step('续学：安静书直达上次玩的那一页', async () => {
+      const today = dateKey()
+      const seed = JSON.stringify({
+        stars: 2,
+        learned: ['quietbook:dress'],
+        streak: 1,
+        lastDate: today,
+        todayKeys: [],
+        quizAwarded: [],
+        last: { module: 'quietbook', id: 'colors' },
+        history: {},
+        wrong: {},
+        v: 3,
+      })
+      try {
+        await evaluate(`localStorage.setItem('kids-edu-progress', ${JSON.stringify(seed)})`)
+        await evaluate(`localStorage.setItem('kids-edu-last', '/quietbook')`)
+        await go('')
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelector('.continue-card')`, 10000, '首页继续卡')
+        await clickAt('.continue-card', 0)
+        await waitFor(`location.hash.includes('/quietbook')`, 5000, '进入安静书')
+        await waitFor(
+          `document.querySelector('.qb-pagetitle')?.textContent.includes('颜色点点')`,
+          6000,
+          '安静书续到上次页码'
+        )
+        await waitFor(`!location.hash.includes('open=')`, 5000, '安静书清理续学参数')
+      } finally {
+        await evaluate(
+          seedRaw === null
+            ? `localStorage.removeItem('kids-edu-progress')`
+            : `localStorage.setItem('kids-edu-progress', ${JSON.stringify(seedRaw)})`
+        )
+        await evaluate(
+          seedLast === null
+            ? `localStorage.removeItem('kids-edu-last')`
+            : `localStorage.setItem('kids-edu-last', ${JSON.stringify(seedLast)})`
+        )
+      }
+    })
+
+    await step('家长报告：今日/7 天/栏目完成度 + 错题入口', async () => {
+      const today = dateKey()
+      const yesterday = dateKey(-1)
+      const seed = JSON.stringify({
+        stars: 9,
+        learned: ['math:num-1', 'math:num-2', 'hanzi:one'],
+        streak: 4,
+        lastDate: today,
+        todayKeys: ['math:num-1', 'math:num-2'],
+        quizAwarded: [`math:${today}`],
+        last: { module: 'brainteasers', id: 'water' },
+        history: {
+          [today]: { learned: 3, stars: 2, quiz: 1 },
+          [yesterday]: { learned: 2, stars: 1, quiz: 0 },
+        },
+        wrong: {
+          brainteasers: [
+            {
+              id: 'water',
+              at: 2000,
+              prompt: '什么东西越洗越脏？',
+              answer: '是水。水越洗东西，自己反而越来越脏。',
+            },
+            {
+              id: 'table',
+              at: 1000,
+              prompt: '什么东西有腿，却不会走路？',
+              answer: '是桌子。桌子有四条腿，可是它不会走路。',
+            },
+          ],
+        },
+        v: 3,
+      })
+      try {
+        await evaluate(`localStorage.setItem('kids-edu-progress', ${JSON.stringify(seed)})`)
+        await go('parent')
+        // hash 路由切换不会重新执行模块初始化；刷新一次才能让 useProgress 读到种子数据
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelector('.parent-page')`, 8000, '家长报告')
+        if (!(await evaluate(`document.title.includes('家长报告')`))) {
+          throw new Error('报告页标题未同步')
+        }
+
+        const nums = await evaluate(
+          `[...document.querySelectorAll('.parent-stats .stat-num')].map((e) => e.textContent.trim())`
+        )
+        if (nums.join('|') !== '2/3|9|4') throw new Error(`概览数字异常: ${nums.join('|')}`)
+        if ((await countOf('.parent-week li')) !== 7) throw new Error('近 7 天不是 7 行')
+        const d0 = await textOf('.parent-week li:nth-child(1) .parent-week-nums')
+        const d1 = await textOf('.parent-week li:nth-child(2) .parent-week-nums')
+        if (!d0.includes('学习 3 条') || !d0.includes('⭐ 2') || !d0.includes('闯关 1 次')) {
+          throw new Error(`今天统计异常: ${d0}`)
+        }
+        if (!d1.includes('学习 2 条') || !d1.includes('⭐ 1')) {
+          throw new Error(`昨天统计异常: ${d1}`)
+        }
+        const summary = await textOf('.parent-week-summary')
+        if (!summary.includes('5 条') || !summary.includes('3 颗星') || !summary.includes('1 次')) {
+          throw new Error(`近 7 天汇总异常: ${summary}`)
+        }
+
+        if ((await countOf('.parent-module')) !== 10) throw new Error('栏目完成度不是 10 项')
+        const overall = await textOf('#parent-modules-title ~ .parent-lead')
+        if (!overall.includes('3 / 322')) throw new Error(`总进度异常: ${overall}`)
+        const moduleCount = (name) =>
+          evaluate(`(() => {
+            const row = [...document.querySelectorAll('.parent-module')].find(
+              (r) => r.querySelector('.parent-module-name')?.textContent.includes(${JSON.stringify(name)})
+            )
+            return row?.querySelector('.parent-module-count')?.textContent.trim() ?? ''
+          })()`)
+        if ((await moduleCount('数学启蒙')) !== '2/21') throw new Error('数学完成度异常')
+        if ((await moduleCount('识字认字')) !== '1/44') throw new Error('识字完成度异常')
+
+        if ((await countOf('.parent-wrong-group')) !== 1) throw new Error('错题分组数异常')
+        if ((await countOf('.parent-mistake-btn')) !== 2) throw new Error('错题条数异常')
+        const firstMistake = await textOf('.parent-mistake-btn')
+        if (!firstMistake.includes('越洗越脏') || !firstMistake.includes('正确答案')) {
+          throw new Error(`错题文案异常: ${firstMistake}`)
+        }
+
+        await clickAt('.parent-mistake-btn', 0)
+        await waitFor(
+          `location.hash.includes('/brainteasers') && location.hash.includes('open=water')`,
+          5000,
+          '错题入口地址'
+        )
+        await waitFor(`document.querySelector('.detail-overlay')`, 5000, '错题详情')
+        await waitFor(`!location.hash.includes('open=')`, 5000, '错题入口清理参数')
+        await clickAt('.detail-card .close-btn', 0)
+        await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭错题详情')
+      } finally {
+        await evaluate(
+          seedRaw === null
+            ? `localStorage.removeItem('kids-edu-progress')`
+            : `localStorage.setItem('kids-edu-progress', ${JSON.stringify(seedRaw)})`
+        )
+        await evaluate(
+          seedLast === null
+            ? `localStorage.removeItem('kids-edu-last')`
+            : `localStorage.setItem('kids-edu-last', ${JSON.stringify(seedLast)})`
+        )
+      }
+    })
+
+    await step('挑战个性化：全部学过后优先复习错题', async () => {
+      const today = dateKey()
+      const seed = JSON.stringify({
+        stars: 40,
+        learned: brainteaserIds.map((id) => `brainteasers:${id}`),
+        streak: 2,
+        lastDate: today,
+        todayKeys: [],
+        quizAwarded: [],
+        last: { module: 'brainteasers', id: 'water' },
+        history: {},
+        wrong: {
+          brainteasers: [
+            {
+              id: 'water',
+              at: 2000,
+              prompt: '什么东西越洗越脏？',
+              answer: '是水。水越洗东西，自己反而越来越脏。',
+            },
+            {
+              id: 'table',
+              at: 1000,
+              prompt: '什么东西有腿，却不会走路？',
+              answer: '是桌子。桌子有四条腿，可是它不会走路。',
+            },
+          ],
+        },
+        v: 3,
+      })
+      try {
+        await evaluate(`localStorage.setItem('kids-edu-progress', ${JSON.stringify(seed)})`)
+        await go('brainteasers')
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelector('.challenge-banner')`, 10000, '挑战入口')
+        await clickAt('.challenge-banner', 0)
+        await waitFor(`document.querySelector('.cq-prompt')`, 5000, '题目谜面')
+        const first = await textOf('.cq-prompt')
+        const retryPrompts = ['什么东西越洗越脏？', '什么东西有腿，却不会走路？']
+        if (!retryPrompts.includes(first)) {
+          throw new Error(`首题没有优先复习错题: ${first}`)
+        }
+        await clickAt('.detail-card .close-btn', 0)
+        await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭个性化挑战')
+      } finally {
+        await evaluate(
+          seedRaw === null
+            ? `localStorage.removeItem('kids-edu-progress')`
+            : `localStorage.setItem('kids-edu-progress', ${JSON.stringify(seedRaw)})`
+        )
+        await evaluate(
+          seedLast === null
+            ? `localStorage.removeItem('kids-edu-last')`
+            : `localStorage.setItem('kids-edu-last', ${JSON.stringify(seedLast)})`
+        )
+      }
+    })
+
+    await step('家长报告：两步确认清空学习记录', async () => {
+      const today = dateKey()
+      const seed = JSON.stringify({
+        stars: 6,
+        learned: ['math:num-1', 'math:num-2'],
+        streak: 2,
+        lastDate: today,
+        todayKeys: ['math:num-1', 'math:num-2'],
+        quizAwarded: [],
+        last: { module: 'math', id: 'num-2' },
+        history: { [today]: { learned: 2, stars: 2, quiz: 0 } },
+        wrong: {
+          math: [{ id: 'num-1', at: 1000, prompt: '', answer: '一' }],
+        },
+        v: 3,
+      })
+      try {
+        await evaluate(`localStorage.setItem('kids-edu-progress', ${JSON.stringify(seed)})`)
+        await evaluate(`localStorage.setItem('kids-edu-last', '/math')`)
+        await go('parent')
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelector('.parent-page')`, 8000, '家长报告')
+        await clickAt('.parent-reset', 0)
+        if (!(await evaluate(`document.querySelector('.parent-reset')?.classList.contains('armed')`))) {
+          throw new Error('第一次点击没有进入确认态')
+        }
+        if (!(await textOf('.reset-msg')).includes('再点一次')) {
+          throw new Error('缺少二次确认提示')
+        }
+
+        await clickAt('.parent-reset', 0)
+        await waitFor(
+          `document.querySelector('.parent-stats .stat-num')?.textContent.trim() === '0/3'`,
+          3000,
+          '统计清零'
+        )
+        const prog = await evaluate(`JSON.parse(localStorage.getItem('kids-edu-progress') || '{}')`)
+        if ((prog.learned ?? []).length) throw new Error('清空后仍有已学记录')
+        if ((prog.stars ?? 0) !== 0) throw new Error('清空后星星不为 0')
+        if (prog.last != null) throw new Error('清空后仍保留最近条目')
+        if (Object.keys(prog.wrong ?? {}).length) throw new Error('清空后仍保留错题')
+        if (Object.keys(prog.history ?? {}).length) throw new Error('清空后仍保留按天历史')
+        if ((await evaluate(`localStorage.getItem('kids-edu-last')`)) !== null) {
+          throw new Error('清空后仍保留旧版续学路径')
+        }
+        if (!(await textOf('.parent-empty')).includes('还没有答错的题')) {
+          throw new Error('清空后错题区没有空状态')
+        }
+
+        await go('')
+        await waitFor(`document.querySelector('.category-list')`, 8000, '首页')
+        if (await evaluate(`!!document.querySelector('.continue-card')`)) {
+          throw new Error('清空后首页仍显示继续学习')
+        }
+      } finally {
+        await evaluate(
+          seedRaw === null
+            ? `localStorage.removeItem('kids-edu-progress')`
+            : `localStorage.setItem('kids-edu-progress', ${JSON.stringify(seedRaw)})`
+        )
+        await evaluate(
+          seedLast === null
+            ? `localStorage.removeItem('kids-edu-last')`
+            : `localStorage.setItem('kids-edu-last', ${JSON.stringify(seedLast)})`
+        )
+        await send('Page.reload')
+        await sleep(600)
       }
     })
 

@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { encyclopedia, type EncyclopediaItem } from '../data/encyclopedia'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import { buildPickQuiz } from '../composables/useChallenge'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
@@ -14,7 +15,7 @@ import { applyFilter, groupBy } from '../utils'
 
 const MODULE = 'encyclopedia'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember, challengePrefs } = useProgress()
 const selected = ref<EncyclopediaItem | null>(null)
 
 /** 筛选：全部 / 没学过 / 学过 */
@@ -34,13 +35,11 @@ const emptyText = computed(() => {
   return ''
 })
 
-/** 今日小挑战：听名称 → 从 3 张图/名里选对 */
+/** 今日小挑战：听名称 → 从 3 张图/名里选对（优先没学过的，混入最多 2 道错题） */
 function buildChallenge() {
-  return buildPickQuiz(
-    encyclopedia.map((i) => ({ id: i.id, label: i.title, emoji: i.emoji })),
-    5,
-    'grid'
-  )
+  const pool = encyclopedia.map((i) => ({ id: i.id, label: i.title, emoji: i.emoji }))
+  const prefs = challengePrefs(MODULE, pool.map((u) => u.id))
+  return buildPickQuiz(pool, 5, 'grid', prefs)
 }
 
 function read(item: EncyclopediaItem) {
@@ -49,6 +48,7 @@ function read(item: EncyclopediaItem) {
 
 function open(item: EncyclopediaItem) {
   selected.value = item
+  remember(MODULE, item.id)
   learn(MODULE, item.id)
   speak(read(item))
 }
@@ -57,6 +57,9 @@ function close() {
   stop()
   selected.value = null
 }
+
+// 首页「继续学习」带 ?open=id 进入时，直接打开对应条目
+useResume(encyclopedia, (i) => i.id, open)
 
 onUnmounted(stop)
 </script>

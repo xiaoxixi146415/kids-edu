@@ -71,13 +71,21 @@ const router = createRouter({
       component: () => import('../views/NurseryRhymesView.vue'),
       meta: { title: '儿童歌谣' },
     },
+    {
+      path: '/parent',
+      name: 'parent',
+      component: () => import('../views/ParentView.vue'),
+      meta: { title: '家长报告' },
+    },
     // 未知地址（旧书签/手误）回首页，避免渲染空白 main
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
 
 /* —— 路由后的标题与焦点：读屏/键盘用户能知道「已经换页了」 —— */
-router.afterEach((to) => {
+router.afterEach((to, from) => {
+  // 同路径只改 query（如续学后清掉 ?open=）不算换页：不重设标题、不抢详情弹层焦点
+  if (from.name && to.path === from.path) return
   const title = (to.meta.title as string) ?? '宝宝乐园'
   document.title = title === '宝宝乐园' ? '宝宝乐园 - 幼儿教育有声乐园' : `${title} - 宝宝乐园`
   // 等新视图渲染完再聚焦主内容；preventScroll 避免和 scrollBehavior 抢滚动位置

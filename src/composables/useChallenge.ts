@@ -24,6 +24,17 @@ export function passThreshold(total: number): number {
   return Math.ceil(total / 2)
 }
 
+/** 每次挑战最多混入几道「以前答错」的题，既复习又不打击信心 */
+const RETRY_PER_QUIZ = 2
+
+/** 出题偏好：由各视图根据自己的数据与学情计算 */
+export interface QuizPrefs {
+  /** 优先出的题：通常是还没学过的条目 */
+  freshIds?: readonly string[]
+  /** 曾答错、已经学过的条目；最多混入 RETRY_PER_QUIZ 道 */
+  retryIds?: readonly string[]
+}
+
 export interface QuizQuestion {
   /** 顶部的引导语 */
   ask: string
@@ -36,6 +47,8 @@ export interface QuizQuestion {
   options: QuizOption[]
   /** 正确选项下标 */
   answer: number
+  /** 题目对应的条目 id（错题本记录 / 复习出题用） */
+  refId: string
 }
 
 /** 听音认物题的条目单元 */
@@ -68,9 +81,32 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-/** 挑 n 个不重复下标 */
-function takeIndexes(len: number, n: number): number[] {
-  return shuffle(Array.from({ length: len }, (_, i) => i)).slice(0, Math.min(n, len))
+/**
+ * 按偏好排序题库：未学 → 错题（最多 2 道）→ 其余随机。
+ * 返回完整队列而不是直接截断，让调用方遇到「连续两题同一答案」时能顺延到下一道。
+ */
+function orderPool<T extends { id: string }>(pool: T[], size: number, prefs: QuizPrefs): T[] {
+  const byId = new Map(pool.map((u) => [u.id, u]))
+  const used = new Set<string>()
+
+  const take = (ids: readonly string[] | undefined): T[] => {
+    const out: T[] = []
+    for (const id of shuffle([...(ids ?? [])])) {
+      if (used.has(id)) continue
+      const unit = byId.get(id)
+      if (!unit) continue
+      used.add(id)
+      out.push(unit)
+    }
+    return out
+  }
+
+  const fresh = take(prefs.freshIds)
+  const retry = take(prefs.retryIds).slice(0, RETRY_PER_QUIZ)
+  const picked = [...fresh, ...retry].slice(0, size)
+  const pickedIds = new Set(picked.map((u) => u.id))
+  const rest = shuffle(pool.filter((u) => !pickedIds.has(u.id)))
+  return [...picked, ...rest]
 }
 
 function pickDistractors<T extends { id: string; label: string }>(
@@ -95,10 +131,18 @@ function pickDistractors<T extends { id: string; label: string }>(
  * 听音认物题：TTS 念目标名称，选项为 3 个 item。
  * variant='grid'（emoji+名字）或 'chars'（识字：只显示大汉字）。
  */
-export function buildPickQuiz(pool: PickUnit[], size = QUIZ_SIZE, variant: QuizVariant = 'grid'): QuizQuestion[] {
+export function buildPickQuiz(
+  pool: PickUnit[],
+  size = QUIZ_SIZE,
+  variant: QuizVariant = 'grid',
+  prefs: QuizPrefs = {}
+): QuizQuestion[] {
   const questions: QuizQuestion[] = []
-  for (const i of takeIndexes(pool.length, size)) {
-    const target = pool[i]
+  let lastAnswer = ''
+  for (const target of orderPool(pool, size, prefs)) {
+    if (questions.length >= size) break
+    // 连续两题同一答案容易让孩子形成「惯性点击」，顺延到下一道
+    if (target.label === lastAnswer) continue
     const distractors = pickDistractors(pool, target.id, target.label, 2)
     if (distractors.length < 2) continue
     // 先洗牌再映射：答案用 id 定位，避免「同名干扰项」被误判
@@ -113,7 +157,9 @@ export function buildPickQuiz(pool: PickUnit[], size = QUIZ_SIZE, variant: QuizV
       variant,
       options,
       answer: picks.findIndex((u) => u.id === target.id),
+      refId: target.id,
     })
+    lastAnswer = target.label
   }
   return questions
 }
@@ -122,10 +168,16 @@ export function buildPickQuiz(pool: PickUnit[], size = QUIZ_SIZE, variant: QuizV
  * 接诗句题：展示上一句 lead，选项为 3 个「下一句」候选（唐诗）。
  * 从其他诗句里挑干扰项，并保证选项文案两两不同。
  */
-export function buildCoupletQuiz(pool: CoupletUnit[], size = QUIZ_SIZE): QuizQuestion[] {
+export function buildCoupletQuiz(
+  pool: CoupletUnit[],
+  size = QUIZ_SIZE,
+  prefs: QuizPrefs = {}
+): QuizQuestion[] {
   const questions: QuizQuestion[] = []
-  for (const i of takeIndexes(pool.length, size)) {
-    const target = pool[i]
+  let lastAnswer = ''
+  for (const target of orderPool(pool, size, prefs)) {
+    if (questions.length >= size) break
+    if (target.answer === lastAnswer) continue
     const distractors: string[] = []
     for (const other of shuffle(pool)) {
       if (distractors.length >= 2) break
@@ -142,7 +194,9 @@ export function buildCoupletQuiz(pool: CoupletUnit[], size = QUIZ_SIZE): QuizQue
       variant: 'list',
       options,
       answer: options.findIndex((o) => o.label === target.answer),
+      refId: target.id,
     })
+    lastAnswer = target.answer
   }
   return questions
 }
@@ -151,10 +205,16 @@ export function buildCoupletQuiz(pool: CoupletUnit[], size = QUIZ_SIZE): QuizQue
  * 猜谜题：TTS 念谜面，选项为 3 个「谜底」候选（其他谜语的答案）。
  * variant='list'：谜底是完整句子，单列排布更好读。
  */
-export function buildRiddleQuiz(pool: RiddleUnit[], size = QUIZ_SIZE): QuizQuestion[] {
+export function buildRiddleQuiz(
+  pool: RiddleUnit[],
+  size = QUIZ_SIZE,
+  prefs: QuizPrefs = {}
+): QuizQuestion[] {
   const questions: QuizQuestion[] = []
-  for (const i of takeIndexes(pool.length, size)) {
-    const target = pool[i]
+  let lastAnswer = ''
+  for (const target of orderPool(pool, size, prefs)) {
+    if (questions.length >= size) break
+    if (target.answer === lastAnswer) continue
     const distractors: string[] = []
     for (const other of shuffle(pool)) {
       if (distractors.length >= 2) break
@@ -171,7 +231,9 @@ export function buildRiddleQuiz(pool: RiddleUnit[], size = QUIZ_SIZE): QuizQuest
       variant: 'list',
       options,
       answer: options.findIndex((o) => o.label === target.answer),
+      refId: target.id,
     })
+    lastAnswer = target.answer
   }
   return questions
 }

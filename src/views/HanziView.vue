@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { hanzi, type HanziItem } from '../data/hanzi'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import { buildPickQuiz } from '../composables/useChallenge'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
@@ -14,7 +15,7 @@ import { applyFilter, groupBy } from '../utils'
 
 const MODULE = 'hanzi'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember, challengePrefs } = useProgress()
 const selected = ref<HanziItem | null>(null)
 
 const filter = ref<LearnFilter>('all')
@@ -35,11 +36,9 @@ const emptyText = computed(() => {
  * 今日小挑战：听读音（直接念汉字，避免拼音被 TTS 念成英文）→ 从 3 个大汉字里选对。
  */
 function buildChallenge() {
-  return buildPickQuiz(
-    hanzi.map((h) => ({ id: h.id, label: h.hanzi, emoji: h.emoji })),
-    5,
-    'chars'
-  )
+  const pool = hanzi.map((h) => ({ id: h.id, label: h.hanzi, emoji: h.emoji }))
+  const prefs = challengePrefs(MODULE, pool.map((u) => u.id))
+  return buildPickQuiz(pool, 5, 'chars', prefs)
 }
 
 /**
@@ -52,6 +51,7 @@ function read(item: HanziItem) {
 
 function open(item: HanziItem) {
   selected.value = item
+  remember(MODULE, item.id)
   learn(MODULE, item.id)
   speak(read(item))
 }
@@ -60,6 +60,8 @@ function close() {
   stop()
   selected.value = null
 }
+
+useResume(hanzi, (h) => h.id, open)
 
 onUnmounted(stop)
 </script>

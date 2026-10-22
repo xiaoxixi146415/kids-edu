@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { numbers, type MathNumber } from '../data/math'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import { useMathQuiz } from '../composables/useMathQuiz'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
@@ -14,7 +15,7 @@ import { applyFilter } from '../utils'
 
 const MODULE = 'math'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember } = useProgress()
 const { quiz, picked, correct, next, pick, feedbackText } = useMathQuiz()
 const selected = ref<MathNumber | null>(null)
 const feedback = ref('')
@@ -35,6 +36,7 @@ function read(n: MathNumber) {
 
 function open(n: MathNumber) {
   selected.value = n
+  remember(MODULE, n.id)
   learn(MODULE, n.id)
   speak(read(n))
 }
@@ -56,8 +58,11 @@ function nextQuiz() {
   speak(q.spoken)
 }
 
+// 续学直达数字卡片；此时不再自动念「趣味练习」的第一题，避免两段语音互相打断
+const { resumed } = useResume(numbers, (n) => n.id, open)
+
 onMounted(() => {
-  speak(next().spoken)
+  if (!resumed) speak(next().spoken)
 })
 
 onUnmounted(stop)

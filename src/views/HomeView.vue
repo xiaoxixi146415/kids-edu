@@ -3,33 +3,13 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { CATEGORIES, type Category } from '../data/categories'
 import BigCard from '../components/BigCard.vue'
 import AppIcon from '../components/AppIcon.vue'
 
 const router = useRouter()
 const { speak, unlock, unlocked, supported } = useSpeech()
-const { stars, streak, todayCount, dailyGoal, todayDone, learnedCount } = useProgress()
-
-/**
- * 首页入口卡：module 供学情统计用，total 为各栏目数据量。
- * total 必须手写：这里若静态 import 各栏目数据，内容会被打进首页共享 chunk，
- * 所有栏目都要陪着下载（懒加载边界会被打破，见 EXPLAIN_CHECKLIST Q2）。
- * 改数据条数后记得同步这里——`npm run check:counts` 会校验两者是否一致。
- */
-const CATEGORIES = [
-  { path: '/encyclopedia', module: 'encyclopedia', total: 44, emoji: '📖', title: '知识百科', subtitle: '认识世界', tone: 'tone-orange' },
-  { path: '/brainteasers', module: 'brainteasers', total: 40, emoji: '🤔', title: '脑筋急转弯', subtitle: '动动小脑瓜', tone: 'tone-purple' },
-  { path: '/tangshi', module: 'tangshi', total: 32, emoji: '📜', title: '唐诗', subtitle: '跟着念古诗', tone: 'tone-green' },
-  { path: '/hanzi', module: 'hanzi', total: 44, emoji: '✏️', title: '识字认字', subtitle: '认一认汉字', tone: 'tone-blue' },
-  { path: '/math', module: 'math', total: 21, emoji: '🔢', title: '数学启蒙', subtitle: '数一数算一算', tone: 'tone-red' },
-  { path: '/animals', module: 'animals', total: 50, emoji: '🦁', title: '动物乐园', subtitle: '听听动物朋友', tone: 'tone-teal' },
-  { path: '/quietbook', module: 'quietbook', total: 9, emoji: '🧸', title: '安静书', subtitle: '点一点 动手玩', tone: 'tone-fuchsia' },
-  { path: '/stories', module: 'stories', total: 10, emoji: '📚', title: '绘本故事', subtitle: '翻翻听故事', tone: 'tone-amber' },
-  { path: '/pinyin', module: 'pinyin', total: 63, emoji: '🔤', title: '拼音乐园', subtitle: '认声母学韵母', tone: 'tone-pink' },
-  { path: '/nursery', module: 'nursery', total: 9, emoji: '🎵', title: '儿童歌谣', subtitle: '听童谣 唱一唱', tone: 'tone-lime' },
-] as const
-
-type Category = (typeof CATEGORIES)[number]
+const { stars, streak, todayCount, dailyGoal, todayDone, learnedCount, last } = useProgress()
 
 /** 某栏目已学数量（内容更新后旧 id 可能残留，展示时按总量截断） */
 function learnedOf(c: Category): number {
@@ -46,14 +26,28 @@ function cornerOf(c: Category): string {
 const overallLearned = computed(() => CATEGORIES.reduce((s, c) => s + learnedOf(c), 0))
 const overallTotal = computed(() => CATEGORIES.reduce((s, c) => s + c.total, 0))
 
-const lastPath = ref('')
+// 旧版本只存了栏目路径（App.vue 仍会写），保留作兜底；v3 起以 useProgress.last 为准
+const legacyPath = ref('')
 try {
-  lastPath.value = typeof localStorage !== 'undefined' ? (localStorage.getItem('kids-edu-last') ?? '') : ''
+  legacyPath.value = typeof localStorage !== 'undefined' ? (localStorage.getItem('kids-edu-last') ?? '') : ''
 } catch {
-  lastPath.value = ''
+  legacyPath.value = ''
 }
 
-const lastModule = computed(() => CATEGORIES.find((c) => c.path === lastPath.value) ?? null)
+const lastModule = computed(() => {
+  const entry = last.value
+  if (entry) {
+    const hit = CATEGORIES.find((c) => c.module === entry.module)
+    if (hit) return hit
+  }
+  return CATEGORIES.find((c) => c.path === legacyPath.value) ?? null
+})
+
+/** 最近条目：栏目匹配时才能直达详情 */
+const lastItemId = computed(() => {
+  const entry = last.value
+  return entry && lastModule.value?.module === entry.module ? entry.id : ''
+})
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -79,7 +73,12 @@ function open(cat: Category) {
 function continueLearn(cat: Category) {
   unlock()
   speak(`我们继续去${cat.title}学习吧`)
-  router.push(cat.path)
+  // 有最近条目就直达详情；旧数据只有栏目路径时退回栏目页
+  if (lastItemId.value) {
+    router.push({ path: cat.path, query: { open: lastItemId.value } })
+  } else {
+    router.push(cat.path)
+  }
 }
 </script>
 
@@ -143,5 +142,7 @@ function continueLearn(cat: Category) {
         @click="open(cat)"
       />
     </div>
+
+    <RouterLink class="parent-link" to="/parent">家长看这里 · 学习报告</RouterLink>
   </div>
 </template>

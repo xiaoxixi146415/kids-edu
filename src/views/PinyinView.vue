@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { pinyin, type PinyinItem } from '../data/pinyin'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
+import { useResume } from '../composables/useResume'
 import type { LearnFilter } from '../types'
 import BigCard from '../components/BigCard.vue'
 import DetailDialog from '../components/DetailDialog.vue'
@@ -12,7 +13,7 @@ import { applyFilter, groupBy } from '../utils'
 
 const MODULE = 'pinyin'
 const { speak, stop } = useSpeech()
-const { learn, isLearned, learnedCount } = useProgress()
+const { learn, isLearned, learnedCount, remember } = useProgress()
 const selected = ref<PinyinItem | null>(null)
 
 const filter = ref<LearnFilter>('all')
@@ -40,6 +41,7 @@ function read(item: PinyinItem) {
 
 function open(item: PinyinItem) {
   selected.value = item
+  remember(MODULE, item.id)
   learn(MODULE, item.id)
   speak(read(item))
 }
@@ -48,6 +50,8 @@ function close() {
   stop()
   selected.value = null
 }
+
+useResume(pinyin, (p) => p.id, open)
 
 onUnmounted(stop)
 </script>
