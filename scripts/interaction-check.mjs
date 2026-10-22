@@ -3,14 +3,16 @@
 // 真实浏览器交互验证（headless Chrome + CDP）：在构建产物上真点、真判，而不是只看页面渲染。
 //
 // 覆盖：
-//   1. 安静书：多选收集 / 点错摇一摇 / 整页完成 + 得星 / 「谁不见了」记忆阶段
-//   2. 今日小挑战：答题 → 纠正 → 结算 + 答错回顾 → 再玩一次全对 → 闯关成功 + 得星
+//   1. 安静书：多选收集 / 点错摇一摇 / 整页完成 + 得星 / 「谁不见了」记忆阶段 / 页码
+//   2. 今日小挑战：答题 → 纠正 → 结算 + 答错回顾 → 再玩一次全对 → 闯关成功 + 得星 + 横幅状态
 //   3. 脑筋急转弯小挑战：谜面 + 3 个谜底选项
-//   4. 静音兜底：挑战直接显示题目文字，不依赖语音
+//   4. 静音兜底：听音题不泄露答案且入口禁用；看题类挑战仍可玩
 //   5. 数学练习：数一数/加减法 → 答对反馈 → 换一题 → 答错反馈
 //   6. 儿童歌谣：连唱逐句推进 / 下一句 / 想一想展开收起 / 关闭弹层
-//   7. 语音接力 / 故事配图与学情条 / 数学 10-20 与筛选 / 路由回顶部 / 弹层焦点循环
-//   8. PWA：离线冷启动 + 离线懒加载栏目
+//   7. 语音接力 / 故事配图与学情条 / 数学 10-20 与筛选 / 路由回顶部
+//   8. 路由标题与焦点 / 未知地址回首页 / 学情数据容错
+//   9. 弹层焦点循环 + 背景 inert + body 滚动锁
+//  10. PWA：离线冷启动 + 离线懒加载栏目
 //
 // 用法（先 npm run build）：
 //   npm run check:interactions
@@ -263,7 +265,7 @@ async function main() {
       if (!(prog.stars >= 1)) throw new Error('未获得星星')
     })
 
-    await step('安静书：谁不见了 → 记忆阶段 3 秒后才出选项', async () => {
+    await step('安静书：谁不见了 → 记忆阶段 4.5 秒后才出选项', async () => {
       await clickText('.qb-chip', '谁不见了')
       await waitFor(`document.querySelector('.qb-memory')`, 5000, '记忆阶段提示')
       if ((await countOf('.qb-opt')) !== 0) throw new Error('记忆阶段不应显示选项')
@@ -375,6 +377,15 @@ async function main() {
       if (!(prog.learned ?? []).includes('quietbook:spot')) throw new Error('未写入 quietbook:spot')
     })
 
+    await step('安静书：第 9 页显示「第九页」而不是数字', async () => {
+      await clickAt('.qb-chip', 8)
+      await waitFor(
+        `document.querySelector('.qb-pageno')?.textContent.includes('九')`,
+        5000,
+        '第 9 页中文页码'
+      )
+    })
+
     /* ================= 2. 今日小挑战 ================= */
     await step('今日小挑战：5 题作答 → 纠正 → 结算', async () => {
       await go('encyclopedia')
@@ -391,7 +402,17 @@ async function main() {
         )
         // 先点第 1 项；错了会在 900ms 后揭示正确项
         await clickAt('.cq-opt', 0)
+        // 答错后必须等正确项揭示才能「下一题」，防止孩子错过纠错
+        const wrongNow = await evaluate(`!!document.querySelector('.cq-opt-wrong')`)
+        if (wrongNow) {
+          const locked = await evaluate(`document.querySelector('.cq-actions .btn')?.disabled === true`)
+          if (!locked) throw new Error(`第 ${q + 1} 题答错后未揭示就能进入下一题`)
+        }
         await sleep(1100)
+        if (wrongNow) {
+          const reopened = await evaluate(`document.querySelector('.cq-actions .btn')?.disabled === false`)
+          if (!reopened) throw new Error(`第 ${q + 1} 题揭示后仍无法进入下一题`)
+        }
         const idx = await evaluate(
           `[...document.querySelectorAll('.cq-opt')].findIndex((el) => el.classList.contains('cq-opt-correct'))`
         )
@@ -447,6 +468,10 @@ async function main() {
       }
       await clickText('.cq-result-actions .btn', '完成')
       await waitFor(`!document.querySelector('.cq-result')`, 3000, '关闭闯关弹层')
+      await sleep(300)
+      // 今天已得过星：横幅要明确告诉孩子，避免「再答一次为什么没有星星」的疑惑
+      const sub = await textOf('.ch-banner-sub')
+      if (!sub.includes('今天已经得过')) throw new Error(`闯关后横幅状态未更新: ${sub}`)
     })
 
     /* ================= 2b. 脑筋急转弯小挑战 / 静音兜底 ================= */
@@ -470,21 +495,43 @@ async function main() {
       await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭挑战')
     })
 
-    await step('静音兜底：挑战直接显示题目文字', async () => {
+    await step('静音兜底：听音挑战禁用不泄露答案；看题挑战仍可玩', async () => {
       await go('encyclopedia')
       await waitFor(`document.querySelector('.challenge-banner')`, 8000, '挑战入口')
       await evaluate(`localStorage.setItem('kids-edu-muted', '1')`)
       await send('Page.reload')
       await waitFor(`document.querySelector('.challenge-banner')`, 10000, '静音后挑战入口')
+
+      // 听音认物题静音时无法作答：入口置灰，点了只给提示，不弹题
+      const off = await evaluate(
+        `document.querySelector('.challenge-banner')?.classList.contains('challenge-off') === true`
+      )
+      if (!off) throw new Error('静音时听音挑战入口未置灰')
+      const sub = await textOf('.ch-banner-sub')
+      if (!sub.includes('打开声音')) throw new Error(`静音横幅文案未提示打开声音: ${sub}`)
       await clickAt('.challenge-banner', 0)
-      await waitFor(`document.querySelector('.cq-opt')`, 5000, '静音闯关弹层')
+      await waitFor(`document.querySelector('.ch-banner-hint')`, 2000, '静音点击提示')
+      if ((await countOf('.detail-overlay')) !== 0) throw new Error('静音时仍打开了听音挑战')
+      if ((await countOf('.cq-say')) !== 0) throw new Error('静音提示出现在未打开的弹层里')
 
-      const say = await textOf('.cq-say')
-      if (!say) throw new Error('静音时未显示题目文字')
-      if ((await countOf('.cq-replay')) !== 0) throw new Error('静音时仍显示重听按钮')
-
+      // 唐诗接句是看题作答，不依赖听音：静音时照常可玩
+      await go('tangshi')
+      await waitFor(`document.querySelector('.challenge-banner')`, 8000, '唐诗挑战入口')
+      if (
+        await evaluate(
+          `document.querySelector('.challenge-banner')?.classList.contains('challenge-off') === true`
+        )
+      ) {
+        throw new Error('看题类挑战在静音时被误禁用')
+      }
+      await clickAt('.challenge-banner', 0)
+      await waitFor(`document.querySelector('.cq-opt')`, 5000, '静音下的唐诗挑战')
+      const prompt = await textOf('.cq-prompt')
+      if (!prompt) throw new Error('看题挑战没有显示上一句')
+      if ((await countOf('.cq-say')) !== 0) throw new Error('看题挑战仍显示静音提示')
       await clickAt('.detail-card .close-btn', 0)
-      await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭静音挑战')
+      await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭唐诗挑战')
+
       await evaluate(`localStorage.setItem('kids-edu-muted', '0')`)
       await send('Page.reload')
       await waitFor(`document.querySelector('.challenge-banner')`, 10000, '恢复有声重新加载')
@@ -688,6 +735,89 @@ async function main() {
       if (y > 50) throw new Error(`进入栏目后仍在滚动位置 ${y}`)
     })
 
+    await step('路由：标题同步 + 焦点落到主内容', async () => {
+      await go('math')
+      await waitFor(`document.title.includes('数学启蒙')`, 4000, '页面标题同步')
+      await waitFor(`document.activeElement?.id === 'main'`, 4000, '焦点移到 main')
+    })
+
+    await step('路由：未知地址回首页', async () => {
+      await go('no-such-page')
+      await waitFor(`location.hash === '#/'`, 4000, '重定向到首页')
+      await waitFor(`document.querySelectorAll('.big-card').length >= 10`, 8000, '首页卡片')
+      if (!(await evaluate(`document.title.includes('宝宝乐园')`))) {
+        throw new Error('回首页后标题未更新')
+      }
+    })
+
+    await step('学情：脏数据不崩、残留 id 不越界，刷新后仍在', async () => {
+      const raw = await evaluate(`localStorage.getItem('kids-edu-progress')`)
+      const today = await evaluate(`(() => {
+        const d = new Date()
+        const p = (n) => String(n).padStart(2, '0')
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+      })()`)
+      try {
+        // 正常数据：刷新后学情仍在
+        await evaluate(`localStorage.setItem('kids-edu-progress', JSON.stringify({
+          stars: 7,
+          learned: ['math:num-1'],
+          streak: 3,
+          lastDate: ${JSON.stringify(today)},
+          todayKeys: ['math:num-1'],
+          quizAwarded: [],
+          v: 2
+        }))`)
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelectorAll('.big-card').length >= 10`, 10000, '刷新后的首页卡片')
+        const readMathCorner = () =>
+          evaluate(`(() => {
+            const card = [...document.querySelectorAll('.big-card')].find(
+              (c) => c.querySelector('.card-title')?.textContent.trim() === '数学启蒙'
+            )
+            return card?.querySelector('.card-corner')?.textContent.trim() ?? ''
+          })()`)
+        let corner = await readMathCorner()
+        if (corner !== '1/21') throw new Error(`刷新后数学角标异常: 「${corner}」`)
+        if ((await textOf('.overall-line b')) !== '1') throw new Error('刷新后全站统计异常')
+
+        // 被删条目残留的旧 id 可能超过实际总量：展示时按总量截断
+        await evaluate(`localStorage.setItem('kids-edu-progress', JSON.stringify({
+          stars: 7,
+          learned: Array.from({ length: 25 }, (_, i) => 'math:ghost-' + i),
+          streak: 3,
+          lastDate: ${JSON.stringify(today)},
+          todayKeys: [],
+          quizAwarded: [],
+          v: 2
+        }))`)
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelectorAll('.big-card').length >= 10`, 10000, '残留 id 首页')
+        corner = await readMathCorner()
+        if (corner !== '21/21') throw new Error(`残留 id 未截断，数学角标为「${corner}」`)
+
+        // 结构损坏 / 类型不对：回退默认值，不白屏
+        await evaluate(`localStorage.setItem('kids-edu-progress', JSON.stringify({
+          stars: '9', learned: {}, streak: null, lastDate: 123, todayKeys: 'x', quizAwarded: 5
+        }))`)
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelectorAll('.big-card').length >= 10`, 10000, '脏数据下的首页')
+        if ((await textOf('.stat-num')) !== '0') throw new Error('非法 stars 没有回退为 0')
+      } finally {
+        await evaluate(
+          raw === null
+            ? `localStorage.removeItem('kids-edu-progress')`
+            : `localStorage.setItem('kids-edu-progress', ${JSON.stringify(raw)})`
+        )
+        await send('Page.reload')
+        await sleep(800)
+        await waitFor(`document.querySelectorAll('.big-card').length >= 10`, 10000, '恢复学情数据')
+      }
+    })
+
     await step('弹层：Tab 焦点循环 + 背景 inert', async () => {
       await go('encyclopedia')
       await waitFor(`document.querySelector('.big-card')`, 8000, '百科卡片')
@@ -695,6 +825,9 @@ async function main() {
       await waitFor(`document.querySelector('.detail-overlay')`, 5000, '详情弹层')
       if (!(await evaluate(`document.querySelector('.app-shell')?.hasAttribute('inert')`))) {
         throw new Error('弹层打开时背景未 inert')
+      }
+      if ((await evaluate(`getComputedStyle(document.body).overflow`)) !== 'hidden') {
+        throw new Error('弹层打开时 body 未锁滚动')
       }
       const tabOk = await evaluate(`(() => {
         const overlay = document.querySelector('.detail-overlay')
@@ -714,6 +847,9 @@ async function main() {
       await waitFor(`!document.querySelector('.detail-overlay')`, 3000, '关闭详情')
       if (await evaluate(`document.querySelector('.app-shell')?.hasAttribute('inert')`)) {
         throw new Error('弹层关闭后背景仍 inert')
+      }
+      if ((await evaluate(`getComputedStyle(document.body).overflow`)) === 'hidden') {
+        throw new Error('弹层关闭后 body 仍锁滚动')
       }
     })
 

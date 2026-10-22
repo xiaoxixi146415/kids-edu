@@ -3,11 +3,13 @@
  * 共享详情弹层：三个视图共用的 dialog 语义封装。
  * - role="dialog" + aria-modal + aria-label（可访问名）
  * - 打开时把焦点移入弹层，关闭/卸载时归还触发元素（focus-management）
+ * - 打开时锁住背景滚动与交互（共享计数锁，支持弹层重叠）
  * - Esc 键或点击背板关闭（modal-escape）
  * - tone 属性叠加主题底色（detail-en / detail-bt / detail-tangshi）
  * 内容由父级通过插槽提供（含各自可见标题/朗读控件）。
  */
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { lockModal, unlockModal } from '../composables/useModalLock'
 import AppIcon from './AppIcon.vue'
 
 const props = withDefaults(
@@ -18,13 +20,19 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 
 const dialogRef = ref<HTMLElement | null>(null)
 let lastFocused: HTMLElement | null = null
+/** 本实例是否持有页面锁，避免关闭态挂载/卸载时误解除别人加的 inert */
+let holdsLock = false
 
-/** 弹层打开时让背景不可交互，避免 Tab / 读屏跑到弹层后面 */
-function setBackgroundInert(on: boolean) {
-  const shell = document.querySelector<HTMLElement>('.app-shell')
-  if (!shell) return
-  if (on) shell.setAttribute('inert', '')
-  else shell.removeAttribute('inert')
+function lock() {
+  if (holdsLock) return
+  holdsLock = true
+  lockModal()
+}
+
+function unlock() {
+  if (!holdsLock) return
+  holdsLock = false
+  unlockModal()
 }
 
 function focusDialog() {
@@ -40,11 +48,11 @@ watch(
   (open) => {
     if (open) {
       lastFocused = document.activeElement as HTMLElement | null
-      setBackgroundInert(true)
+      lock()
       focusDialog()
-    } else {
-      setBackgroundInert(false)
-      lastFocused?.focus?.()
+    } else if (holdsLock) {
+      unlock()
+      if (lastFocused?.isConnected) lastFocused.focus()
       lastFocused = null
     }
   },
@@ -83,8 +91,9 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 onBeforeUnmount(() => {
-  setBackgroundInert(false)
-  lastFocused?.focus?.()
+  if (!holdsLock) return
+  unlock()
+  if (lastFocused?.isConnected) lastFocused.focus()
 })
 </script>
 

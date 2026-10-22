@@ -16,6 +16,14 @@ export interface QuizOption {
 
 export type QuizVariant = 'grid' | 'chars' | 'list'
 
+/** 挑战默认题量：横幅文案与结算阈值都从这里来，避免两处写死后漂移 */
+export const QUIZ_SIZE = 5
+
+/** 通关阈值：答对一半即算过关 */
+export function passThreshold(total: number): number {
+  return Math.ceil(total / 2)
+}
+
 export interface QuizQuestion {
   /** 顶部的引导语 */
   ask: string
@@ -65,13 +73,18 @@ function takeIndexes(len: number, n: number): number[] {
   return shuffle(Array.from({ length: len }, (_, i) => i)).slice(0, Math.min(n, len))
 }
 
-function pickDistractors<T extends { id: string }>(pool: T[], excludeId: string, target: string, count: number): T[] {
-  const rest = shuffle(pool.filter((u) => u.id !== excludeId && u.id !== target))
+function pickDistractors<T extends { id: string; label: string }>(
+  pool: T[],
+  excludeId: string,
+  excludeLabel: string,
+  count: number
+): T[] {
+  const rest = shuffle(pool.filter((u) => u.id !== excludeId && u.label !== excludeLabel))
   const picked: T[] = []
   for (const u of rest) {
     if (picked.length >= count) break
     // 避免选项文案重复
-    if (!picked.some((p) => ('label' in p ? p.label === (u as unknown as { label: string }).label : true))) {
+    if (!picked.some((p) => p.label === u.label)) {
       picked.push(u)
     }
   }
@@ -82,13 +95,15 @@ function pickDistractors<T extends { id: string }>(pool: T[], excludeId: string,
  * 听音认物题：TTS 念目标名称，选项为 3 个 item。
  * variant='grid'（emoji+名字）或 'chars'（识字：只显示大汉字）。
  */
-export function buildPickQuiz(pool: PickUnit[], size = 5, variant: QuizVariant = 'grid'): QuizQuestion[] {
+export function buildPickQuiz(pool: PickUnit[], size = QUIZ_SIZE, variant: QuizVariant = 'grid'): QuizQuestion[] {
   const questions: QuizQuestion[] = []
   for (const i of takeIndexes(pool.length, size)) {
     const target = pool[i]
-    const distractors = pickDistractors(pool, target.id, '', 2)
+    const distractors = pickDistractors(pool, target.id, target.label, 2)
     if (distractors.length < 2) continue
-    const options = shuffle([target, ...distractors]).map((u) => ({
+    // 先洗牌再映射：答案用 id 定位，避免「同名干扰项」被误判
+    const picks = shuffle([target, ...distractors])
+    const options = picks.map((u) => ({
       emoji: variant === 'grid' ? u.emoji : undefined,
       label: u.label,
     }))
@@ -97,7 +112,7 @@ export function buildPickQuiz(pool: PickUnit[], size = 5, variant: QuizVariant =
       say: `${target.label}。`,
       variant,
       options,
-      answer: options.findIndex((o) => o.label === target.label),
+      answer: picks.findIndex((u) => u.id === target.id),
     })
   }
   return questions
@@ -107,7 +122,7 @@ export function buildPickQuiz(pool: PickUnit[], size = 5, variant: QuizVariant =
  * 接诗句题：展示上一句 lead，选项为 3 个「下一句」候选（唐诗）。
  * 从其他诗句里挑干扰项，并保证选项文案两两不同。
  */
-export function buildCoupletQuiz(pool: CoupletUnit[], size = 5): QuizQuestion[] {
+export function buildCoupletQuiz(pool: CoupletUnit[], size = QUIZ_SIZE): QuizQuestion[] {
   const questions: QuizQuestion[] = []
   for (const i of takeIndexes(pool.length, size)) {
     const target = pool[i]
@@ -136,7 +151,7 @@ export function buildCoupletQuiz(pool: CoupletUnit[], size = 5): QuizQuestion[] 
  * 猜谜题：TTS 念谜面，选项为 3 个「谜底」候选（其他谜语的答案）。
  * variant='list'：谜底是完整句子，单列排布更好读。
  */
-export function buildRiddleQuiz(pool: RiddleUnit[], size = 5): QuizQuestion[] {
+export function buildRiddleQuiz(pool: RiddleUnit[], size = QUIZ_SIZE): QuizQuestion[] {
   const questions: QuizQuestion[] = []
   for (const i of takeIndexes(pool.length, size)) {
     const target = pool[i]

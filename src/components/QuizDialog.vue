@@ -3,14 +3,15 @@
  * 「今日小挑战」闯关弹层：一次 5 题，听题/看题点选。
  * - 选中即判：答对加分并播报；答错先提醒，随后高亮正确项再放行下一题（无挫败感纠错学习）
  * - 每题有 🔊 重听按钮（题目文案全部为中文，交给 TTS 念）
- * - 静音/不支持语音时，题目文本直接显示，保证没有声音也能玩
+ * - 静音/不支持语音时给出打开声音的提示（听音题不显示答案）
+ * - 答错后需等正确项揭示才能进入下一题，保证纠错被看见
  * - 结算屏按答对题数显示星星，≥3 题算闯关成功并 emit finish
  * - 结算屏列出答错的题与正确谜底，方便家长带着回顾
  * - 复用 DetailDialog 弹层语义（焦点圈定 / Esc / 可访问名）
  */
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useSpeech } from '../composables/useSpeech'
-import type { QuizQuestion } from '../composables/useChallenge'
+import { passThreshold, type QuizQuestion } from '../composables/useChallenge'
 import DetailDialog from './DetailDialog.vue'
 
 const props = withDefaults(
@@ -24,7 +25,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'close'): void; (e: 'finish', score: number, total: number): void }>()
 
-const { speak, stop, muted, supported } = useSpeech()
+const { speak, stop, muted, canSpeak } = useSpeech()
 
 const index = ref(0)
 const score = ref(0)
@@ -46,9 +47,20 @@ let finishFired = false
 const q = computed(() => props.questions[index.value])
 const total = computed(() => props.questions.length)
 const isLast = computed(() => index.value >= total.value - 1)
-const passed = computed(() => score.value >= Math.ceil(total.value / 2))
-/** 能否靠听答题：静音或不支持语音时改为显示题目文字 */
-const canHear = computed(() => supported && !muted.value)
+const passed = computed(() => score.value >= passThreshold(total.value))
+/** 能否靠听答题：静音或不支持语音时给出提示，不再把题目文字当答案显示 */
+const canHear = computed(() => canSpeak.value)
+const noSoundText = computed(() =>
+  muted.value
+    ? '声音关掉了，点右上角的小喇叭打开声音，再听一遍吧'
+    : '这台设备没有中文语音，先去列表里看卡片吧'
+)
+/** 答错后要等正确项揭示出来才能进入下一题，避免孩子错过纠错 */
+const canGoNext = computed(() => {
+  if (chosen.value === null) return false
+  if (q.value && chosen.value !== q.value.answer && !reveal.value) return false
+  return true
+})
 
 function speakQ() {
   if (!props.open || done.value) return
@@ -185,8 +197,8 @@ function optClass(i: number): string {
         </button>
         <p class="cq-ask">{{ q.ask }}</p>
         <p v-if="q.show" class="cq-prompt">{{ q.show }}</p>
-        <!-- 静音 / 设备无语音：直接显示题目文字，保证没有声音也能作答 -->
-        <p v-else-if="!canHear" class="cq-say">{{ q.say }}</p>
+        <!-- 静音 / 设备无语音：只提示怎么办，不显示听音题的答案 -->
+        <p v-else-if="!canHear" class="cq-say">{{ noSoundText }}</p>
       </div>
 
       <div
@@ -212,7 +224,7 @@ function optClass(i: number): string {
       <p v-if="feedback" class="cq-feedback" :class="{ ok: fbOk }" role="status">{{ feedback }}</p>
 
       <div class="cq-actions">
-        <button type="button" class="btn btn-primary" :disabled="chosen === null" @click="next">
+        <button type="button" class="btn btn-primary" :disabled="!canGoNext" @click="next">
           {{ isLast ? '看结果 🎁' : '下一题 →' }}
         </button>
       </div>
@@ -228,7 +240,7 @@ function optClass(i: number): string {
         </div>
         <p class="cq-result-msg" role="status">答对了 {{ score }} / {{ total }} 题</p>
         <p v-if="passed" class="cq-result-hint">今天这颗小星星送给你，明天再来挑战哦</p>
-        <p v-else class="cq-result-hint">回列表再听一听，答对 {{ Math.ceil(total / 2) }} 题就能得星星啦</p>
+        <p v-else class="cq-result-hint">回列表再听一听，答对 {{ passThreshold(total) }} 题就能得星星啦</p>
 
         <!-- 答错回顾：把正确的谜底留在屏幕上，家长可以带着再读一遍 -->
         <section v-if="missed.length" class="cq-review" aria-label="再看看答错的题">

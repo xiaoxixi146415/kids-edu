@@ -31,8 +31,8 @@ export const hanzi: HanziItem[] = [
     emoji: '🥈',
     hanzi: '二',
     pinyin: 'èr',
-    words: ['二个', '第二'],
-    text: '二像两只小鸭子，上面一横下面一横，表示有两个。',
+    words: ['两个', '第二'],
+    text: '二像一只小鸭子，上面一横下面一横，表示两个。',
   },
   {
     id: 'san',

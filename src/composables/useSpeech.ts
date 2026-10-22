@@ -10,7 +10,7 @@
  * - 移动端音色列表常需用户手势后才就绪：首次手势、轮询、visibilitychange 三重兜底
  * - 全局静音开关 + 音色/语速设置，均写入 localStorage 持久化
  */
-import { ref, readonly } from 'vue'
+import { computed, ref, readonly } from 'vue'
 
 const supported =
   typeof window !== 'undefined' &&
@@ -39,6 +39,14 @@ const zhVoices = ref<SpeechSynthesisVoice[]>([])
 /** 音色列表是否已有结论（有返回值或已超时）：用于 UI 区分「加载中」与「设备无音色」 */
 const voicesChecked = ref(false)
 
+/**
+ * 现在能否真正发出中文语音：有 API、未静音、且确认有中文音色。
+ * 音色列表尚未就绪时先放行（移动端首次手势前常为空），避免误禁用。
+ */
+const canSpeak = computed(
+  () => supported && !muted.value && (zhVoices.value.length > 0 || !voicesChecked.value)
+)
+
 /** 语音是否已解锁：浏览器要求用户手势后才能发声 */
 const unlocked = ref(false)
 
@@ -47,6 +55,15 @@ let autoZhVoice: SpeechSynthesisVoice | null = null
 
 /** 朗读接力用的序号：每次 speak/stop 自增，用于打断旧链（避免 cancel 触发 onend 又续读） */
 let speakSeq = 0
+
+/** localStorage 写入失败（隐私模式/空间满）不应打断学习与朗读 */
+function safeSet(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    /* 存储不可用时降级为内存状态 */
+  }
+}
 
 function loadSettings() {
   if (typeof localStorage === 'undefined') return
@@ -57,7 +74,10 @@ function loadSettings() {
       const saved = JSON.parse(raw) as Partial<SpeechSettings>
       settings.value = {
         voiceURI: typeof saved.voiceURI === 'string' ? saved.voiceURI : null,
-        rate: typeof saved.rate === 'number' && saved.rate > 0 ? saved.rate : DEFAULT_SETTINGS.rate,
+        rate:
+          typeof saved.rate === 'number' && saved.rate > 0
+            ? Math.min(1.5, Math.max(0.5, saved.rate))
+            : DEFAULT_SETTINGS.rate,
       }
     }
   } catch {
@@ -68,7 +88,7 @@ function loadSettings() {
 
 function persistSettings() {
   if (typeof localStorage === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value))
+  safeSet(STORAGE_KEY, JSON.stringify(settings.value))
 }
 
 /**
@@ -128,8 +148,9 @@ function init() {
 
 /** 按中英文句号等切分成短句，保留标点 */
 function splitSentences(text: string): string[] {
-  return text
-    .split(/(?<=[。！？!?；;，,])/)
+  // 不用后行断言 (?<=)：Safari 16.4 之前不支持，会在 speak() 里抛 SyntaxError。
+  // 这里改成「非标点片段 + 可选尾标点」，效果等价且兼容老浏览器。
+  return (text.match(/[^。！？!?；;，,]+[。！？!?；;，,]?/g) ?? [])
     .map((s) => s.trim())
     .filter(Boolean)
 }
@@ -229,7 +250,7 @@ function stop() {
 function toggleMute(): boolean {
   muted.value = !muted.value
   if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('kids-edu-muted', muted.value ? '1' : '0')
+    safeSet('kids-edu-muted', muted.value ? '1' : '0')
   }
   if (muted.value) stop()
   return muted.value
@@ -267,6 +288,7 @@ export function useSpeech() {
     muted,
     unlocked,
     supported,
+    canSpeak,
     voicesChecked,
     settings: readonly(settings),
     zhVoices: readonly(zhVoices),

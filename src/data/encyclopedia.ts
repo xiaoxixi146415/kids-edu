@@ -56,7 +56,7 @@ export const encyclopedia: EncyclopediaItem[] = [
     category: '动物',
     emoji: '🐧',
     title: '企鹅',
-    text: '企鹅住在很冷很冷的南极，它走路摇摇摆摆，还会跳进水里游泳，抓小鱼吃。',
+    text: '企鹅大多住在寒冷的南半球，南极的企鹅最有名。它走路摇摇摆摆，还会跳进水里游泳，抓小鱼吃。',
   },
   {
     id: 'dolphin',
@@ -154,7 +154,7 @@ export const encyclopedia: EncyclopediaItem[] = [
     category: '动物',
     emoji: '🐰',
     title: '兔子',
-    text: '兔子有两只长长的耳朵，爱吃胡萝卜，跳起来一蹦一蹦的，遇到危险还会飞快地躲进地洞里。',
+    text: '兔子有两只长长的耳朵，爱吃青草、青菜和胡萝卜，跳起来一蹦一蹦的，遇到危险还会飞快地躲进地洞里。',
   },
   {
     id: 'frog',
@@ -224,7 +224,7 @@ export const encyclopedia: EncyclopediaItem[] = [
     category: '自然',
     emoji: '⚡',
     title: '闪电',
-    text: '下雨打雷的时候，云朵和云朵撞到一起，天上就会闪过一道亮亮的闪电，像一条弯弯的会发光的蛇。',
+    text: '下雨打雷的时候，云朵里的小水滴和小冰粒撞来撞去，攒了很多很多电，电一下子跑出来，天上就闪过一道亮亮的闪电，像一条弯弯的会发光的蛇。',
   },
   {
     id: 'mirror',
@@ -266,7 +266,7 @@ export const encyclopedia: EncyclopediaItem[] = [
     category: '动物',
     emoji: '🦏',
     title: '犀牛',
-    text: '犀牛是陆地上第二大的动物，皮肤厚厚的，像穿了一身大铠甲。它鼻子上的角摸起来硬硬的，其实和我们的指甲一样，是慢慢长出来的。',
+    text: '犀牛是很大的动物，皮肤厚厚的，像穿了一身大铠甲。它鼻子上的角摸起来硬硬的，不是骨头，成分和我们的指甲很像，也是慢慢长出来的。',
   },
   {
     id: 'hummingbird',

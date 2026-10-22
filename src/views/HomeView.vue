@@ -31,14 +31,19 @@ const CATEGORIES = [
 
 type Category = (typeof CATEGORIES)[number]
 
+/** 某栏目已学数量（内容更新后旧 id 可能残留，展示时按总量截断） */
+function learnedOf(c: Category): number {
+  return Math.min(learnedCount(c.module), c.total)
+}
+
 /** 某栏目已学 >0 时显示角标 x/N */
 function cornerOf(c: Category): string {
-  const n = learnedCount(c.module)
+  const n = learnedOf(c)
   return n > 0 ? `${n}/${c.total}` : ''
 }
 
 /** 全站累计学完条目 */
-const overallLearned = computed(() => CATEGORIES.reduce((s, c) => s + learnedCount(c.module), 0))
+const overallLearned = computed(() => CATEGORIES.reduce((s, c) => s + learnedOf(c), 0))
 const overallTotal = computed(() => CATEGORIES.reduce((s, c) => s + c.total, 0))
 
 const lastPath = ref('')
@@ -65,11 +70,14 @@ function start() {
 }
 
 function open(cat: Category) {
+  // 点卡片本身就是用户手势：顺手解锁语音，避免从深链进入后一直提示「先点我开始」
+  unlock()
   speak(cat.title)
   router.push(cat.path)
 }
 
 function continueLearn(cat: Category) {
+  unlock()
   speak(`我们继续去${cat.title}学习吧`)
   router.push(cat.path)
 }
@@ -86,34 +94,32 @@ function continueLearn(cat: Category) {
     <p v-else class="welcome">{{ greeting }}！今天也要加油哦</p>
     <p v-if="supported && !unlocked" class="hint">👆 先点一下「开始」，让声音响起来吧</p>
 
-    <!-- 学习激励统计条 -->
-    <template v-if="unlocked">
-      <div class="stats-row" role="list" aria-label="学习成果">
-        <div class="stat-chip" role="listitem">
-          <span class="stat-emoji" aria-hidden="true">⭐</span>
-          <span class="stat-num">{{ stars }}</span>
-          <span class="stat-label">小星星</span>
-        </div>
-        <div class="stat-chip" role="listitem">
-          <span class="stat-emoji" aria-hidden="true">🔥</span>
-          <span class="stat-num">{{ streak }}</span>
-          <span class="stat-label">连续打卡</span>
-        </div>
-        <div class="stat-chip" role="listitem">
-          <span class="stat-emoji" aria-hidden="true">📖</span>
-          <span class="stat-num">{{ todayCount }}/{{ dailyGoal }}</span>
-          <span class="stat-label">今日已学</span>
-        </div>
+    <!-- 学习激励统计条：与声音是否解锁无关，深链/返回用户也要能看到 -->
+    <div class="stats-row" role="list" aria-label="学习成果">
+      <div class="stat-chip" role="listitem">
+        <span class="stat-emoji" aria-hidden="true">⭐</span>
+        <span class="stat-num">{{ stars }}</span>
+        <span class="stat-label">小星星</span>
       </div>
-      <p v-if="todayDone" class="task-done" role="status">🎉 今日任务完成啦，你真棒！明天也要来哦</p>
-      <p v-if="overallLearned > 0" class="overall-line" role="status">
-        🎓 已认识 <b>{{ overallLearned }}</b> / {{ overallTotal }} 个内容，继续加油！
-      </p>
-    </template>
+      <div class="stat-chip" role="listitem">
+        <span class="stat-emoji" aria-hidden="true">🔥</span>
+        <span class="stat-num">{{ streak }}</span>
+        <span class="stat-label">连续打卡</span>
+      </div>
+      <div class="stat-chip" role="listitem">
+        <span class="stat-emoji" aria-hidden="true">📖</span>
+        <span class="stat-num">{{ todayCount }}/{{ dailyGoal }}</span>
+        <span class="stat-label">今日已学</span>
+      </div>
+    </div>
+    <p v-if="todayDone" class="task-done" role="status">🎉 今日任务完成啦，你真棒！明天也要来哦</p>
+    <p v-if="overallLearned > 0" class="overall-line" role="status">
+      🎓 已认识 <b>{{ overallLearned }}</b> / {{ overallTotal }} 个内容，继续加油！
+    </p>
 
     <!-- 继续学习 -->
     <BigCard
-      v-if="unlocked && lastModule"
+      v-if="lastModule"
       class="continue-card"
       :emoji="lastModule.emoji"
       title="继续学习"
@@ -122,7 +128,7 @@ function continueLearn(cat: Category) {
       @click="continueLearn(lastModule)"
     />
 
-    <p v-if="unlocked" class="section-title">开始学习</p>
+    <p class="section-title">开始学习</p>
 
     <div class="category-list">
       <BigCard

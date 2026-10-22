@@ -95,7 +95,7 @@ export const numbers: MathNumber[] = [
     chinese: '十',
     pinyin: 'shí',
     emoji: '🎉',
-    text: '十个彩花。数字十，由“一”和“零”组成，表示十个一。',
+    text: '十朵彩花。数字十，由“一”和“零”组成，表示十个一。',
   },
   {
     id: 'num-11',

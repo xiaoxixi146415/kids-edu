@@ -267,7 +267,7 @@ export const quietbook: QbPage[] = [
         options: [
           { kind: 'emoji', emoji: '🍎', label: '苹果' },
           { kind: 'emoji', emoji: '🥕', label: '胡萝卜' },
-          { kind: 'emoji', emoji: '🦴', label: '骨头' },
+          { kind: 'emoji', emoji: '🍖', label: '肉' },
           { kind: 'emoji', emoji: '🍌', label: '香蕉' },
         ],
         answer: [2],

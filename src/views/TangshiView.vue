@@ -76,7 +76,7 @@ onUnmounted(stop)
 <template>
   <div class="list-page">
     <ModuleLearnBar :learned="progress.learned" :total="progress.total" v-model:filter="filter" />
-    <ChallengeLauncher module="tangshi" label="唐诗" :build="buildChallenge" />
+    <ChallengeLauncher module="tangshi" label="唐诗" :build="buildChallenge" :needs-sound="false" />
 
     <template v-if="items.length">
       <div class="grid">

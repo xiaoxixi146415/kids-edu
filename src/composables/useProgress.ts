@@ -50,6 +50,8 @@ interface Persisted {
   todayKeys: string[]
   /** 今日已闯关成功的栏目（每次只算一天，日期切换即清） */
   quizAwarded: string[]
+  /** 存储结构版本，便于以后迁移 */
+  v?: number
 }
 
 /* —— 模块级单例状态 —— */
@@ -78,8 +80,23 @@ function persist() {
     lastDate: lastDate.value,
     todayKeys: todayKeys.value,
     quizAwarded: quizAwarded.value,
+    v: 2,
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  } catch {
+    // 隐私模式 / 存储满：保留内存状态，不影响本次学习与朗读
+  }
+}
+
+/** 只接受非负有限整数（防 NaN / 负数 / 小数） */
+function safeInt(v: unknown, fallback = 0): number {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : fallback
+}
+
+/** 只接受字符串数组（旧 schema 或手工篡改可能混入数字等） */
+function safeKeys(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
 }
 
 function load() {
@@ -88,14 +105,14 @@ function load() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return
     const data = JSON.parse(raw) as Partial<Persisted>
-    stars.value = typeof data.stars === 'number' ? data.stars : 0
-    learned.value = Array.isArray(data.learned) ? data.learned : []
-    streak.value = typeof data.streak === 'number' ? data.streak : 0
+    stars.value = safeInt(data.stars)
+    learned.value = safeKeys(data.learned)
+    streak.value = safeInt(data.streak)
     lastDate.value = typeof data.lastDate === 'string' ? data.lastDate : ''
     const today = dayKey()
     if (lastDate.value === today) {
-      todayKeys.value = Array.isArray(data.todayKeys) ? data.todayKeys : []
-      quizAwarded.value = Array.isArray(data.quizAwarded) ? data.quizAwarded : []
+      todayKeys.value = safeKeys(data.todayKeys)
+      quizAwarded.value = safeKeys(data.quizAwarded)
     } else {
       // 今天还没学：新一天计数清零，连续天数若断档则归零
       todayKeys.value = []
@@ -176,6 +193,14 @@ function passQuiz(module: string): boolean {
   return fresh
 }
 
+/**
+ * 该栏目今天是否已经闯关成功（横幅用来提示「今日已得星」）。
+ * quizAwarded 的 key 是 `${module}:${today}`。
+ */
+function quizPassedToday(module: string): boolean {
+  return quizAwarded.value.includes(`${module}:${dayKey()}`)
+}
+
 /** 该条目是否已学过（用于卡片打勾） */
 function isLearned(module: string, id: string): boolean {
   return learned.value.includes(keyOf(module, id))
@@ -197,7 +222,8 @@ function reset() {
   streak.value = 0
   todayKeys.value = []
   quizAwarded.value = []
-  lastDate.value = dayKey()
+  // 置空而不是置为今天：下一次学习时 rollDay 会从 1 天连续开始
+  lastDate.value = ''
   todayCount.value = 0
   persist()
 }
@@ -220,6 +246,8 @@ export function useProgress() {
     learn,
     /** 闯关答题得星，返回是否新得星 */
     passQuiz,
+    /** 该栏目今天是否已闯关成功 */
+    quizPassedToday,
     /** 该条目是否已学 */
     isLearned,
     /** 栏目已学数量 */

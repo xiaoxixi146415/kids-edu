@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { nurseryRhymes, type NurseryRhyme } from '../data/nursery'
 import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
@@ -77,7 +77,7 @@ function stopPlaying() {
   playing.value = false
 }
 
-/** 无声设备/静音时的逐句演示节拍，让动画仍能播完 */
+/** 无声设备/静音时的逐句演示节拍，让动画仍能播完；留足看字的时间 */
 let silentTimer: number | undefined
 const silentStep = () => {
   if (silentTimer) window.clearInterval(silentTimer)
@@ -94,7 +94,7 @@ const silentStep = () => {
     }
     i++
     active.value = i
-  }, 900)
+  }, 2500)
 }
 
 /** 从第一句开始整首连唱：逐句朗读并自动翻页，唱完得星 */
@@ -133,6 +133,11 @@ function toggleTip() {
   showTip.value = true
   speak(`想一想：${r.tip}`)
 }
+
+/** 静音开关打开时立刻停下连唱，避免画面继续「假装在唱」 */
+watch(muted, (m) => {
+  if (m) stopPlaying()
+})
 
 onUnmounted(() => {
   if (silentTimer) window.clearInterval(silentTimer)

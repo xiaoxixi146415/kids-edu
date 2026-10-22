@@ -17,7 +17,9 @@ import { useSpeech } from '../composables/useSpeech'
 import { useProgress } from '../composables/useProgress'
 
 const MODULE = 'quietbook'
-const CN = ['一', '二', '三', '四', '五', '六', '七', '八']
+const CN = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+/** 「谁不见了」先记一记的时长：3 秒对 4~6 个图案偏短，留足观察时间 */
+const REMEMBER_MS = 4500
 
 const router = useRouter()
 const { speak, stop } = useSpeech()
@@ -43,6 +45,7 @@ const phase = ref<'remember' | 'play'>('play')
 let autoTimer: number | undefined
 let wrongTimer: number | undefined
 let phaseTimer: number | undefined
+let scrollTimer: number | undefined
 
 const page = computed(() => quietbook[pageIndex.value])
 const round = computed<QbRound>(() => page.value.rounds[roundIndex.value])
@@ -93,6 +96,7 @@ function clearTimers() {
   window.clearTimeout(autoTimer)
   window.clearTimeout(wrongTimer)
   window.clearTimeout(phaseTimer)
+  window.clearTimeout(scrollTimer)
 }
 
 function resetRound() {
@@ -116,14 +120,14 @@ function openPage() {
   nextTick(() => {
     speak(`${page.value.intro}${first?.ask ?? ''}`)
     if (first?.goal === 'whats-missing') {
-      // 首回合就是要记住的小家伙：亮出来 → 3 秒后发问
+      // 首回合就是要记住的小家伙：亮出来 → 4.5 秒后发问
       phase.value = 'remember'
       busy.value = true
       phaseTimer = window.setTimeout(() => {
         phase.value = 'play'
         busy.value = false
         if (first.after) speak(first.after)
-      }, 3000)
+      }, REMEMBER_MS)
     }
   })
 }
@@ -143,7 +147,7 @@ function startRoundFlow() {
       phase.value = 'play'
       busy.value = false
       if (r.after) speak(r.after)
-    }, 3000)
+    }, REMEMBER_MS)
   } else {
     nextTick(sayAsk)
   }
@@ -290,6 +294,13 @@ function emojiOf(o: QbOption | undefined): string {
 function goto(i: number) {
   if (i < 0 || i >= total || i === pageIndex.value) return
   pageIndex.value = i
+  // 在底部点「下一页」后新页可能落在视口外；等翻页动画结束再滚回书页顶部
+  window.clearTimeout(scrollTimer)
+  scrollTimer = window.setTimeout(() => {
+    const board = document.querySelector<HTMLElement>('.qb-board')
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    board?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }, 240)
 }
 
 watch(pageIndex, () => {
@@ -359,7 +370,7 @@ onUnmounted(() => {
     <Transition name="qb-page" mode="out-in">
       <section :key="page.id" class="qb-board" :style="{ background: page.bg }">
         <div class="qb-head">
-          <span class="qb-pageno" :style="{ background: page.accent }">第 {{ cnPage }} 页</span>
+          <span class="qb-pageno" :style="{ borderColor: page.accent }">第 {{ cnPage }} 页</span>
           <span v-if="isDone && playing" class="qb-cleared" aria-label="这页玩过啦">✨ 玩过</span>
           <span class="qb-head-spacer"></span>
           <span v-if="playing" class="qb-dots" aria-hidden="true">
@@ -644,8 +655,10 @@ onUnmounted(() => {
 }
 .qb-pageno {
   padding: 4px 14px;
+  border: 2px solid transparent;
   border-radius: var(--radius-pill);
-  color: var(--color-on-primary);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-on-surface);
   font-size: 15px;
   font-weight: 800;
 }
